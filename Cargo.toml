@@ -2,8 +2,11 @@
 name = "woe"
 version = "0.1.0"
 authors = ["Andrew Lilley Brinker <andrewabrinker@gmail.com>"]
+description = """
+    A Result type that differentiates between local errors (which can be handled)
+    and fatal errors (which cannot)
+"""
+license = "MIT OR Apache-2.0"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+categories = ["Rust patterns"]
+keywords = ["result", "error-handling"]
