@@ -1,15 +1,15 @@
 #![feature(try_trait)]
 
-use std::result::Result as StdResult;
-use std::iter::{Iterator, FromIterator, DoubleEndedIterator, FusedIterator, Product, Sum};
 use std::fmt::Debug;
+use std::iter::{DoubleEndedIterator, FromIterator, FusedIterator, Iterator, Product, Sum};
 use std::ops::Try;
 use std::ops::{Deref, DerefMut};
+use std::result::Result as StdResult;
 
-#[cfg(feature="termination_trait_lib")]
-use std::process::{Termination, ExitCode};
+#[cfg(feature = "termination_trait_lib")]
+use std::process::{ExitCode, Termination};
 
-#[cfg(feature="trusted_len")]
+#[cfg(feature = "trusted_len")]
 use std::iter::TrustedLen;
 
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -19,7 +19,7 @@ pub enum Result<T, L, F> {
     FatalErr(F),
 }
 
-#[cfg(feature="try_trait")]
+#[cfg(feature = "try_trait")]
 impl<T, L, F> Try for Result<T, L, F> {
     type Ok = StdResult<T, L>;
     type Error = F;
@@ -70,21 +70,30 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    pub fn contains<U>(&self, x: &U) -> bool where U: PartialEq<T> {
+    pub fn contains<U>(&self, x: &U) -> bool
+    where
+        U: PartialEq<T>,
+    {
         match self {
             Result::Ok(t) if *x == *t => true,
             _ => false,
         }
     }
 
-    pub fn contains_local_err<E>(&self, e: &E) -> bool where E: PartialEq<L> {
+    pub fn contains_local_err<E>(&self, e: &E) -> bool
+    where
+        E: PartialEq<L>,
+    {
         match self {
             Result::LocalErr(err) if *e == *err => true,
             _ => false,
         }
     }
 
-    pub fn contains_fatal_err<E>(&self, e: &E) -> bool where E: PartialEq<F> {
+    pub fn contains_fatal_err<E>(&self, e: &E) -> bool
+    where
+        E: PartialEq<F>,
+    {
         match self {
             Result::FatalErr(err) if *e == *err => true,
             _ => false,
@@ -130,7 +139,7 @@ impl<T, L, F> Result<T, L, F> {
 
     pub fn map<U, S>(self, f: U) -> Result<S, L, F>
     where
-        U: FnOnce(T) -> S
+        U: FnOnce(T) -> S,
     {
         match self {
             Result::Ok(t) => Result::Ok(f(t)),
@@ -141,7 +150,7 @@ impl<T, L, F> Result<T, L, F> {
 
     pub fn map_or<U, G>(self, default: U, f: G) -> U
     where
-        G: FnOnce(T) -> U
+        G: FnOnce(T) -> U,
     {
         match self {
             Result::Ok(t) => f(t),
@@ -161,10 +170,10 @@ impl<T, L, F> Result<T, L, F> {
             Result::FatalErr(err) => default_fatal(err),
         }
     }
-    
+
     pub fn map_local_err<U, S>(self, f: U) -> Result<T, S, F>
     where
-        U: FnOnce(L) -> S
+        U: FnOnce(L) -> S,
     {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -172,10 +181,10 @@ impl<T, L, F> Result<T, L, F> {
             Result::FatalErr(e) => Result::FatalErr(e),
         }
     }
-    
+
     pub fn map_fatal_err<U, S>(self, f: U) -> Result<T, L, S>
     where
-        U: FnOnce(F) -> S
+        U: FnOnce(F) -> S,
     {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -225,7 +234,7 @@ impl<T, L, F> Result<T, L, F> {
         match self {
             Result::Ok(t) => Result::Ok(t),
             Result::LocalErr(_) => res,
-            Result::FatalErr(err) => Result::FatalErr(err)
+            Result::FatalErr(err) => Result::FatalErr(err),
         }
     }
 
@@ -279,7 +288,10 @@ impl<T, L, F> Result<T, L, F> {
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F> where T: Copy {
+impl<'a, T, L, F> Result<&'a T, L, F>
+where
+    T: Copy,
+{
     pub fn copied(self) -> Result<T, L, F> {
         match self {
             Result::Ok(t) => Result::Ok(*t),
@@ -289,7 +301,10 @@ impl<'a, T, L, F> Result<&'a T, L, F> where T: Copy {
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Copy {
+impl<'a, T, L, F> Result<&'a mut T, L, F>
+where
+    T: Copy,
+{
     pub fn copied(self) -> Result<T, L, F> {
         match self {
             Result::Ok(t) => Result::Ok(*t),
@@ -299,7 +314,10 @@ impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Copy {
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F> where T: Clone {
+impl<'a, T, L, F> Result<&'a T, L, F>
+where
+    T: Clone,
+{
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
             Result::Ok(t) => Result::Ok(t.clone()),
@@ -309,7 +327,10 @@ impl<'a, T, L, F> Result<&'a T, L, F> where T: Clone {
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Clone {
+impl<'a, T, L, F> Result<&'a mut T, L, F>
+where
+    T: Clone,
+{
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
             Result::Ok(t) => Result::Ok(t.clone()),
@@ -319,7 +340,11 @@ impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Clone {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where L: Debug, F: Debug {
+impl<T, L, F> Result<T, L, F>
+where
+    L: Debug,
+    F: Debug,
+{
     pub fn unwrap(self) -> T {
         match self {
             Result::Ok(t) => t,
@@ -337,7 +362,11 @@ impl<T, L, F> Result<T, L, F> where L: Debug, F: Debug {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where T: Debug, F: Debug {
+impl<T, L, F> Result<T, L, F>
+where
+    T: Debug,
+    F: Debug,
+{
     pub fn unwrap_local_err(self) -> L {
         match self {
             Result::Ok(t) => panic!("{:?}", t),
@@ -355,7 +384,11 @@ impl<T, L, F> Result<T, L, F> where T: Debug, F: Debug {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where T: Debug, L: Debug {
+impl<T, L, F> Result<T, L, F>
+where
+    T: Debug,
+    L: Debug,
+{
     pub fn unwrap_fatal_err(self) -> F {
         match self {
             Result::Ok(t) => panic!("{:?}", t),
@@ -368,12 +401,15 @@ impl<T, L, F> Result<T, L, F> where T: Debug, L: Debug {
         match self {
             Result::Ok(_) => panic!("{}", msg),
             Result::LocalErr(_) => panic!("{}", msg),
-            Result::FatalErr(err) => err, 
+            Result::FatalErr(err) => err,
         }
     }
 }
 
-impl<T, L, F> Result<T, L, F> where T: Default {
+impl<T, L, F> Result<T, L, F>
+where
+    T: Default,
+{
     pub fn unwrap_or_default(self) -> T {
         match self {
             Result::Ok(t) => t,
@@ -382,8 +418,12 @@ impl<T, L, F> Result<T, L, F> where T: Default {
     }
 }
 
-#[cfg(feature="never_type")]
-impl<T, L, F> Result<T, L, F> where L: Into<!>, F: Into<!> {
+#[cfg(feature = "never_type")]
+impl<T, L, F> Result<T, L, F>
+where
+    L: Into<!>,
+    F: Into<!>,
+{
     pub fn into_ok(self) -> T {
         match self {
             Result::Ok(t) => t,
@@ -393,7 +433,10 @@ impl<T, L, F> Result<T, L, F> where L: Into<!>, F: Into<!> {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where T: Deref {
+impl<T, L, F> Result<T, L, F>
+where
+    T: Deref,
+{
     pub fn as_deref(&self) -> Result<&<T as Deref>::Target, &L, &F> {
         match self {
             Result::Ok(t) => Result::Ok(t.deref()),
@@ -403,7 +446,10 @@ impl<T, L, F> Result<T, L, F> where T: Deref {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where L: Deref {
+impl<T, L, F> Result<T, L, F>
+where
+    L: Deref,
+{
     pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -413,7 +459,10 @@ impl<T, L, F> Result<T, L, F> where L: Deref {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where F: Deref {
+impl<T, L, F> Result<T, L, F>
+where
+    F: Deref,
+{
     pub fn as_deref_fatal_err(&self) -> Result<&T, &L, &<F as Deref>::Target> {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -423,7 +472,10 @@ impl<T, L, F> Result<T, L, F> where F: Deref {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where T: DerefMut {
+impl<T, L, F> Result<T, L, F>
+where
+    T: DerefMut,
+{
     pub fn as_deref_mut(&mut self) -> Result<&mut <T as Deref>::Target, &mut L, &mut F> {
         match self {
             Result::Ok(t) => Result::Ok(t.deref_mut()),
@@ -433,7 +485,10 @@ impl<T, L, F> Result<T, L, F> where T: DerefMut {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where L: DerefMut {
+impl<T, L, F> Result<T, L, F>
+where
+    L: DerefMut,
+{
     pub fn as_deref_mut_local_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut F> {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -443,7 +498,10 @@ impl<T, L, F> Result<T, L, F> where L: DerefMut {
     }
 }
 
-impl<T, L, F> Result<T, L, F> where F: DerefMut {
+impl<T, L, F> Result<T, L, F>
+where
+    F: DerefMut,
+{
     pub fn as_deref_mut_fatal_err(&mut self) -> Result<&mut T, &mut L, &mut <F as Deref>::Target> {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -489,8 +547,13 @@ where
 }
 
 impl<A, V, L, F> FromIterator<Result<A, L, F>> for Result<V, L, F>
-where V: FromIterator<A> {
-    fn from_iter<I>(iter: I) -> Result<V, L, F> where I: IntoIterator<Item = Result<A, L, F>> {
+where
+    V: FromIterator<A>,
+{
+    fn from_iter<I>(iter: I) -> Result<V, L, F>
+    where
+        I: IntoIterator<Item = Result<A, L, F>>,
+    {
         process_results(iter.into_iter(), |i| i.collect())
     }
 }
@@ -546,8 +609,12 @@ where
     }
 }
 
-#[cfg(feature="termination_trait_lib")]
-impl<T, L, F> Termination for Result<(), L, F> where L: Debug, F: Debug {
+#[cfg(feature = "termination_trait_lib")]
+impl<T, L, F> Termination for Result<(), L, F>
+where
+    L: Debug,
+    F: Debug,
+{
     fn report(self) -> i32 {
         match self {
             Result::Ok(()) => ().report(),
@@ -557,8 +624,12 @@ impl<T, L, F> Termination for Result<(), L, F> where L: Debug, F: Debug {
     }
 }
 
-#[cfg(feature="termination_trait_lib")]
-impl<T, L, F> Termination for Result<!, L, F> where L: Debug, F: Debug {
+#[cfg(feature = "termination_trait_lib")]
+impl<T, L, F> Termination for Result<!, L, F>
+where
+    L: Debug,
+    F: Debug,
+{
     fn report(self) -> i32 {
         let Err(err) = self;
         eprintln!("Error: {:?}", err);
@@ -662,11 +733,13 @@ where
     for<'a> G: FnMut(ResultShunt<'a, I, L, F>) -> U,
 {
     let mut error = Result::Ok(());
-    let shunt = ResultShunt { iter, error: &mut error };
+    let shunt = ResultShunt {
+        iter,
+        error: &mut error,
+    };
     let value = f(shunt);
     error.map(|()| value)
 }
-
 
 impl<I, T, L, F> Iterator for ResultShunt<'_, I, L, F>
 where
@@ -765,7 +838,7 @@ fn do_third_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
 
 fn do_another_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
     let result = do_third_thing(x, y)?;
-    
+
     woe::Result::from_ok(result)
 }
 
