@@ -1,6 +1,6 @@
 [package]
 name = "woe"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Andrew Lilley Brinker <andrewabrinker@gmail.com>"]
 description = """
     A Result type that differentiates between local errors (which can be handled)
@@ -10,3 +10,4 @@ license = "MIT OR Apache-2.0"
 edition = "2018"
 categories = ["rust-patterns"]
 keywords = ["result", "error-handling"]
+repository = "https://github.com/alilleybrinker/woe/"
