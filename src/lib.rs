@@ -1,7 +1,11 @@
-#![feature(try_trait)]
-
-use std::ops::Try;
 use std::result::Result as StdResult;
+use std::iter::{Iterator, DoubleEndedIterator, FusedIterator};
+
+#[cfg(feature="try_trait")]
+use std::ops::Try;
+
+#[cfg(feature="trusted_len")]
+use std::iter::TrustedLen;
 
 #[derive(Debug)]
 pub enum Result<T, L, F> {
@@ -10,6 +14,7 @@ pub enum Result<T, L, F> {
     FatalErr(F),
 }
 
+#[cfg(feature="try_trait")]
 impl<T, L, F> Try for Result<T, L, F> {
     type Ok = StdResult<T, L>;
     type Error = F;
@@ -173,6 +178,81 @@ impl<T, L, F> Result<T, L, F> {
             Result::FatalErr(e) => Result::FatalErr(f(e)),
         }
     }
+
+    pub fn iter(&self) -> Iter<T> {
+        let inner = match self {
+            Result::Ok(t) => Some(t),
+            _ => None,
+        };
+
+        Iter { inner }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        let inner = match self {
+            Result::Ok(t) => Some(t),
+            _ => None,
+        };
+
+        IterMut { inner }
+    }
+
+    pub fn and<U>(self, res: Result<U, L, F>) -> Result<U, L, F> {
+        match self {
+            Result::Ok(_) => res,
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+
+    pub fn and_then<U, G>(self, op: G) -> Result<U, L, F>
+    where
+        G: FnOnce(T) -> Result<U, L, F>,
+    {
+        match self {
+            Result::Ok(t) => op(t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+
+    pub fn or_local<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(_) => res,
+            Result::FatalErr(err) => Result::FatalErr(err)
+        }
+    }
+
+    pub fn or_fatal<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(_) => res,
+        }
+    }
+
+    pub fn or_else_local<O, M>(self, op: O) -> Result<T, M, F>
+    where
+        O: FnOnce(L) -> Result<T, M, F>,
+    {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => op(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+
+    pub fn or_else_fatal<O, G>(self, op: O) -> Result<T, L, G>
+    where
+        O: FnOnce(F) -> Result<T, L, G>,
+    {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => op(err),
+        }
+    }
 }
 
 impl<T: Default, L, F> Result<T, L, F> {
@@ -184,6 +264,68 @@ impl<T: Default, L, F> Result<T, L, F> {
         }
     }
 }
+
+pub struct Iter<'a, T: 'a> {
+    inner: Option<&'a T>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = &'a T;
+
+    #[inline]
+    fn next(&mut self) -> Option<&'a T> {
+        self.inner.take()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = if self.inner.is_some() { 1 } else { 0 };
+        (n, Some(n))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<&'a T> {
+        self.inner.take()
+    }
+}
+
+impl<'a, T> FusedIterator for Iter<'a, T> {}
+
+#[cfg(feature = "trusted_len")]
+unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
+
+pub struct IterMut<'a, T: 'a> {
+    inner: Option<&'a mut T>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    #[inline]
+    fn next(&mut self) -> Option<&'a mut T> {
+        self.inner.take()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = if self.inner.is_some() { 1 } else { 0 };
+        (n, Some(n))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<&'a mut T> {
+        self.inner.take()
+    }
+}
+
+impl<'a, T> FusedIterator for IterMut<'a, T> {}
+
+#[cfg(feature = "trusted_len")]
+unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 
 /*
 fn do_third_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
