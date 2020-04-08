@@ -16,42 +16,48 @@ enable the error handling pattern described by Tyler Neely (@spacejam) in the bl
 in a Correctness-Critical Rust Project"][post]. `woe::Result` is intended to be a more ergonomic
 alternative to the `Result<Result<T, LocalError>, FatalError>` type proposed in the post.
 
+The important thing to note is that using the question mark operator on `woe::Result` causes
+any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
+the local code to handle any local errors without propagating them.
+
 ## Example
 
 ```rust
-fn do_third_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
-    if x > y {
-        woe::Result::Ok(x)
-    } else if x == y {
-        woe::Result::LocalErr(LocalError::SomeError)
-    } else {
-        woe::Result::FatalErr(FatalError::CatastrophicError)
-    }
-}
-
-fn do_another_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
-    let result = do_third_thing(x, y)?;
-
-    woe::Result::from_ok(result)
-}
-
-fn do_thing() -> Result<i64, FatalError> {
-    let result = do_another_thing(5, 5)?;
-
-    match result {
-        Err(local_err) => {
-            println!("Local error: {:?}", local_err);
-
-            Ok(i64::default())
-        }
-        Ok(num) => Ok(num),
-    }
-}
+use std::ops::Try;
+use woe::Result::{self, Ok, LocalErr, FatalErr};
+use std::result::Result as StdResult;
 
 fn main() {
     match do_thing() {
-        Ok(num) => println!("Got a number: {}", num),
-        Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+        StdResult::Ok(num) => println!("Got a number: {}", num),
+        StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+    }
+}
+
+fn do_thing() -> StdResult<i64, FatalError> {
+    let result = do_another_thing(5, 5)?;
+
+    match result {
+        StdResult::Err(local_err) => {
+            println!("Local error: {:?}", local_err);
+            StdResult::Ok(i64::default())
+        }
+        StdResult::Ok(num) => StdResult::Ok(num),
+    }
+}
+
+fn do_another_thing(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
+    let result = do_third_thing(x, y)?;
+    Result::from_ok(result)
+}
+
+fn do_third_thing(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
+    if x > y {
+        Ok(x)
+    } else if x == y {
+        LocalErr(LocalError::SomeError)
+    } else {
+        FatalErr(FatalError::CatastrophicError)
     }
 }
 
@@ -67,5 +73,6 @@ enum FatalError {
     CatastrophicError,
 }
 ```
+
 
 [post]: http://sled.rs/errors.html "Link to the blog post"
