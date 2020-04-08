@@ -1,5 +1,6 @@
 use std::result::Result as StdResult;
 use std::iter::{Iterator, DoubleEndedIterator, FusedIterator};
+use std::fmt::Debug;
 
 #[cfg(feature="try_trait")]
 use std::ops::Try;
@@ -251,6 +252,119 @@ impl<T, L, F> Result<T, L, F> {
             Result::Ok(t) => Result::Ok(t),
             Result::LocalErr(err) => Result::LocalErr(err),
             Result::FatalErr(err) => op(err),
+        }
+    }
+
+    pub fn unwrap_or(self, optb: T) -> T {
+        match self {
+            Result::Ok(t) => t,
+            _ => optb,
+        }
+    }
+
+    pub fn unwrap_or_else<M, G>(self, local_op: M, fatal_op: G) -> T
+    where
+        M: FnOnce(L) -> T,
+        G: FnOnce(F) -> T,
+    {
+        match self {
+            Result::Ok(t) => t,
+            Result::LocalErr(err) => local_op(err),
+            Result::FatalErr(err) => fatal_op(err),
+        }
+    }
+}
+
+impl<'a, T, L, F> Result<&'a T, L, F> where T: Copy {
+    pub fn copied(self) -> Result<T, L, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(*t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Copy {
+    pub fn copied(self) -> Result<T, L, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(*t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<'a, T, L, F> Result<&'a T, L, F> where T: Clone {
+    pub fn cloned(self) -> Result<T, L, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t.clone()),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<'a, T, L, F> Result<&'a mut T, L, F> where T: Clone {
+    pub fn cloned(self) -> Result<T, L, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t.clone()),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where L: Debug, F: Debug {
+    pub fn unwrap(self) -> T {
+        match self {
+            Result::Ok(t) => t,
+            Result::LocalErr(err) => panic!("{:?}", err),
+            Result::FatalErr(err) => panic!("{:?}", err),
+        }
+    }
+
+    pub fn expect(self, msg: &str) -> T {
+        match self {
+            Result::Ok(t) => t,
+            Result::LocalErr(_) => panic!("{}", msg),
+            Result::FatalErr(_) => panic!("{}", msg),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where T: Debug, F: Debug {
+    pub fn unwrap_local_err(self) -> L {
+        match self {
+            Result::Ok(t) => panic!("{:?}", t),
+            Result::LocalErr(err) => err,
+            Result::FatalErr(err) => panic!("{:?}", err),
+        }
+    }
+
+    pub fn expect_local_err(self, msg: &str) -> L {
+        match self {
+            Result::Ok(_) => panic!("{}", msg),
+            Result::LocalErr(err) => err,
+            Result::FatalErr(_) => panic!("{}", msg),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where T: Debug, L: Debug {
+    pub fn unwrap_fatal_err(self) -> F {
+        match self {
+            Result::Ok(t) => panic!("{:?}", t),
+            Result::LocalErr(err) => panic!("{:?}", err),
+            Result::FatalErr(err) => err,
+        }
+    }
+
+    pub fn expect_fatal_err(self, msg: &str) -> F {
+        match self {
+            Result::Ok(_) => panic!("{}", msg),
+            Result::LocalErr(_) => panic!("{}", msg),
+            Result::FatalErr(err) => err, 
         }
     }
 }
