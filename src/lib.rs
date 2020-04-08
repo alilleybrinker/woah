@@ -1,14 +1,18 @@
-use std::result::Result as StdResult;
-use std::iter::{Iterator, DoubleEndedIterator, FusedIterator};
-use std::fmt::Debug;
+#![feature(try_trait)]
 
-#[cfg(feature="try_trait")]
+use std::result::Result as StdResult;
+use std::iter::{Iterator, FromIterator, DoubleEndedIterator, FusedIterator, Product, Sum};
+use std::fmt::Debug;
 use std::ops::Try;
+use std::ops::{Deref, DerefMut};
+
+#[cfg(feature="termination_trait_lib")]
+use std::process::{Termination, ExitCode};
 
 #[cfg(feature="trusted_len")]
 use std::iter::TrustedLen;
 
-#[derive(Debug)]
+#[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum Result<T, L, F> {
     Ok(T),
     LocalErr(L),
@@ -369,6 +373,199 @@ impl<T, L, F> Result<T, L, F> where T: Debug, L: Debug {
     }
 }
 
+impl<T, L, F> Result<T, L, F> where T: Default {
+    pub fn unwrap_or_default(self) -> T {
+        match self {
+            Result::Ok(t) => t,
+            _ => T::default(),
+        }
+    }
+}
+
+#[cfg(feature="never_type")]
+impl<T, L, F> Result<T, L, F> where L: Into<!>, F: Into<!> {
+    pub fn into_ok(self) -> T {
+        match self {
+            Result::Ok(t) => t,
+            Result::LocalErr(err) => err.into(),
+            Result::FatalErr(err) => err.into(),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where T: Deref {
+    pub fn as_deref(&self) -> Result<&<T as Deref>::Target, &L, &F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t.deref()),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where L: Deref {
+    pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err.deref()),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where F: Deref {
+    pub fn as_deref_fatal_err(&self) -> Result<&T, &L, &<F as Deref>::Target> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err.deref()),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where T: DerefMut {
+    pub fn as_deref_mut(&mut self) -> Result<&mut <T as Deref>::Target, &mut L, &mut F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t.deref_mut()),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where L: DerefMut {
+    pub fn as_deref_mut_local_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err.deref_mut()),
+            Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F> where F: DerefMut {
+    pub fn as_deref_mut_fatal_err(&mut self) -> Result<&mut T, &mut L, &mut <F as Deref>::Target> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err),
+            Result::FatalErr(err) => Result::FatalErr(err.deref_mut()),
+        }
+    }
+}
+
+impl<T, L, F> Result<Option<T>, L, F> {
+    pub fn transpose(self) -> Option<Result<T, L, F>> {
+        match self {
+            Result::Ok(Some(t)) => Some(Result::Ok(t)),
+            Result::Ok(None) => None,
+            Result::LocalErr(err) => Some(Result::LocalErr(err)),
+            Result::FatalErr(err) => Some(Result::FatalErr(err)),
+        }
+    }
+}
+
+impl<T, L, F> Clone for Result<T, L, F>
+where
+    T: Clone,
+    L: Clone,
+    F: Clone,
+{
+    fn clone(&self) -> Result<T, L, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t.clone()),
+            Result::LocalErr(err) => Result::LocalErr(err.clone()),
+            Result::FatalErr(err) => Result::FatalErr(err.clone()),
+        }
+    }
+
+    fn clone_from(&mut self, source: &Result<T, L, F>) {
+        match (self, source) {
+            (Result::Ok(to), Result::Ok(from)) => to.clone_from(from),
+            (Result::LocalErr(to), Result::LocalErr(from)) => to.clone_from(from),
+            (Result::FatalErr(to), Result::FatalErr(from)) => to.clone_from(from),
+            (to, from) => *to = from.clone(),
+        }
+    }
+}
+
+impl<A, V, L, F> FromIterator<Result<A, L, F>> for Result<V, L, F>
+where V: FromIterator<A> {
+    fn from_iter<I>(iter: I) -> Result<V, L, F> where I: IntoIterator<Item = Result<A, L, F>> {
+        process_results(iter.into_iter(), |i| i.collect())
+    }
+}
+
+impl<'a, T, L, F> IntoIterator for &'a mut Result<T, L, F> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> IterMut<'a, T> {
+        self.iter_mut()
+    }
+}
+
+impl<'a, T, L, F> IntoIterator for &'a Result<T, L, F> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
+    }
+}
+
+impl<T, L, F> IntoIterator for Result<T, L, F> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+
+    fn into_iter(self) -> IntoIter<T> {
+        IntoIter { inner: self.ok() }
+    }
+}
+
+impl<T, U, L, F> Product<Result<U, L, F>> for Result<T, L, F>
+where
+    T: Product<U>,
+{
+    fn product<I>(iter: I) -> Result<T, L, F>
+    where
+        I: Iterator<Item = Result<U, L, F>>,
+    {
+        process_results(iter, |i| i.product())
+    }
+}
+
+impl<T, U, L, F> Sum<Result<U, L, F>> for Result<T, L, F>
+where
+    T: Sum<U>,
+{
+    fn sum<I>(iter: I) -> Result<T, L, F>
+    where
+        I: Iterator<Item = Result<U, L, F>>,
+    {
+        process_results(iter, |i| i.sum())
+    }
+}
+
+#[cfg(feature="termination_trait_lib")]
+impl<T, L, F> Termination for Result<(), L, F> where L: Debug, F: Debug {
+    fn report(self) -> i32 {
+        match self {
+            Result::Ok(()) => ().report(),
+            Result::LocalErr(err) => Result::LocalErr::<!, _>(err).report(),
+            Result::FatalErr(err) => Result::FatalErr::<!, _>(err).report(),
+        }
+    }
+}
+
+#[cfg(feature="termination_trait_lib")]
+impl<T, L, F> Termination for Result<!, L, F> where L: Debug, F: Debug {
+    fn report(self) -> i32 {
+        let Err(err) = self;
+        eprintln!("Error: {:?}", err);
+        ExitCode::FAILURE.report()
+    }
+}
+
 impl<T: Default, L, F> Result<T, L, F> {
     pub fn into_result_default(self) -> StdResult<T, F> {
         match self {
@@ -376,6 +573,19 @@ impl<T: Default, L, F> Result<T, L, F> {
             Result::LocalErr(_) => Ok(T::default()),
             Result::FatalErr(err) => Err(err),
         }
+    }
+}
+
+pub struct IntoIter<T> {
+    inner: Option<T>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    #[inline]
+    fn next(&mut self) -> Option<T> {
+        self.inner.take()
     }
 }
 
@@ -440,6 +650,107 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
 #[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
+
+pub(crate) struct ResultShunt<'a, I, L, F> {
+    iter: I,
+    error: &'a mut Result<(), L, F>,
+}
+
+pub(crate) fn process_results<I, T, L, F, G, U>(iter: I, mut f: G) -> Result<U, L, F>
+where
+    I: Iterator<Item = Result<T, L, F>>,
+    for<'a> G: FnMut(ResultShunt<'a, I, L, F>) -> U,
+{
+    let mut error = Result::Ok(());
+    let shunt = ResultShunt { iter, error: &mut error };
+    let value = f(shunt);
+    error.map(|()| value)
+}
+
+
+impl<I, T, L, F> Iterator for ResultShunt<'_, I, L, F>
+where
+    I: Iterator<Item = Result<T, L, F>>,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.find(|_| true)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.error.is_err() {
+            (0, Some(0))
+        } else {
+            let (_, upper) = self.iter.size_hint();
+            (0, upper)
+        }
+    }
+
+    fn try_fold<B, G, R>(&mut self, init: B, mut f: G) -> R
+    where
+        G: FnMut(B, Self::Item) -> R,
+        R: Try<Ok = B>,
+    {
+        let error = &mut *self.error;
+        self.iter
+            .try_fold(init, |acc, x| match x {
+                Result::Ok(x) => LoopState::from_try(f(acc, x)),
+                Result::LocalErr(e) => {
+                    *error = Result::LocalErr(e);
+                    LoopState::Break(Try::from_ok(acc))
+                }
+                Result::FatalErr(e) => {
+                    *error = Result::FatalErr(e);
+                    LoopState::Break(Try::from_ok(acc))
+                }
+            })
+            .into_try()
+    }
+}
+
+#[derive(PartialEq)]
+enum LoopState<C, B> {
+    Continue(C),
+    Break(B),
+}
+
+impl<C, B> Try for LoopState<C, B> {
+    type Ok = C;
+    type Error = B;
+    #[inline]
+    fn into_result(self) -> StdResult<Self::Ok, Self::Error> {
+        match self {
+            LoopState::Continue(y) => Ok(y),
+            LoopState::Break(x) => Err(x),
+        }
+    }
+    #[inline]
+    fn from_error(v: Self::Error) -> Self {
+        LoopState::Break(v)
+    }
+    #[inline]
+    fn from_ok(v: Self::Ok) -> Self {
+        LoopState::Continue(v)
+    }
+}
+
+impl<R: Try> LoopState<R::Ok, R> {
+    #[inline]
+    fn from_try(r: R) -> Self {
+        match Try::into_result(r) {
+            Ok(v) => LoopState::Continue(v),
+            Err(v) => LoopState::Break(Try::from_error(v)),
+        }
+    }
+    #[inline]
+    fn into_try(self) -> R {
+        match self {
+            LoopState::Continue(v) => Try::from_ok(v),
+            LoopState::Break(v) => v,
+        }
+    }
+}
 
 /*
 fn do_third_thing(x: i64, y: i64) -> woe::Result<i64, LocalError, FatalError> {
