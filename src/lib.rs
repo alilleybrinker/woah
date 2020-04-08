@@ -1,5 +1,8 @@
 #![feature(try_trait)]
-
+#![feature(termination_trait_lib)]
+#![feature(trusted_len)]
+#![feature(never_type)]
+#![feature(process_exitcode_placeholder)]
 #![doc(test(attr(feature(try_trait))))]
 
 //!`woe` is a (currently nightly-only) Rust crate which provides the following type:
@@ -78,11 +81,7 @@ use std::iter::{DoubleEndedIterator, FromIterator, FusedIterator, Iterator, Prod
 use std::ops::Try;
 use std::ops::{Deref, DerefMut};
 use std::result::Result as StdResult;
-
-#[cfg(feature = "termination_trait_lib")]
 use std::process::{ExitCode, Termination};
-
-#[cfg(feature = "trusted_len")]
 use std::iter::TrustedLen;
 
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -490,7 +489,6 @@ where
     }
 }
 
-#[cfg(feature = "never_type")]
 impl<T, L, F> Result<T, L, F>
 where
     L: Into<!>,
@@ -681,8 +679,7 @@ where
     }
 }
 
-#[cfg(feature = "termination_trait_lib")]
-impl<T, L, F> Termination for Result<(), L, F>
+impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
     F: Debug,
@@ -690,22 +687,31 @@ where
     fn report(self) -> i32 {
         match self {
             Result::Ok(()) => ().report(),
-            Result::LocalErr(err) => Result::LocalErr::<!, _>(err).report(),
-            Result::FatalErr(err) => Result::FatalErr::<!, _>(err).report(),
+            Result::LocalErr(err) => Result::LocalErr::<!, L, F>(err).report(),
+            Result::FatalErr(err) => Result::FatalErr::<!, L, F>(err).report(),
         }
     }
 }
 
-#[cfg(feature = "termination_trait_lib")]
-impl<T, L, F> Termination for Result<!, L, F>
+impl<L, F> Termination for Result<!, L, F>
 where
     L: Debug,
     F: Debug,
 {
     fn report(self) -> i32 {
-        let Err(err) = self;
-        eprintln!("Error: {:?}", err);
-        ExitCode::FAILURE.report()
+        match self {
+            Result::LocalErr(err) => {
+                eprintln!("Error: {:?}", err);
+                ExitCode::FAILURE.report()
+            }
+            Result::FatalErr(err) => {
+                eprintln!("Error: {:?}", err);
+                ExitCode::FAILURE.report()
+            }
+            Result::Ok(t) => {
+                t
+            }
+        }
     }
 }
 
@@ -760,7 +766,6 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 impl<'a, T> FusedIterator for Iter<'a, T> {}
 
-#[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
 pub struct IterMut<'a, T: 'a> {
@@ -791,7 +796,6 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
-#[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 
 pub(crate) struct ResultShunt<'a, I, L, F> {
