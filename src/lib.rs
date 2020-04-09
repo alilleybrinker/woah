@@ -1,3 +1,5 @@
+#![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woe/issues/")]
+
 // Turn on the try trait for the regular code and for documentation tests.
 #![cfg_attr(feature="try_trait", feature(try_trait))]
 #![cfg_attr(feature="try_trait", doc(test(attr(feature(try_trait)))))]
@@ -12,6 +14,8 @@
 #![warn(clippy::restriction)]
 // TODO: Add all missing documentation so this lint passes.
 // #![warn(missing_docs)]
+// #![warn(missing_doc_code_examples)]
+// #![warn(private_doc_tests)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
@@ -34,12 +38,38 @@
 //! any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
 //! the local code to handle any local errors without propagating them.
 //!
-//! # Example
+//! # Features
+//! 
+//! `woe` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
+//! to get the full power of the `woe::Result` type, including:
+//! 
+//! * Being able to use it with the question mark operator,
+//! * Being able to make it the return type of `fn main`,
+//! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
+//!   from `Vec<woe::Result<T, L, F>` into `woe::Result<Vec<T>, L, F>` via the `collect` method).
+//! 
+//! The following table is the full list of features. If you want to use `woe` without any dependencies,
+//! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
+//! methods.
+//! 
+//!| Feature Name         | Channels              | Depends On         | What It Does |
+//!|:---------------------|:----------------------|:-------------------|:-------------|
+//!| `default`            | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
+//!| `either_methods`     | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
+//!| `nightly`            | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+//!| `try_trait`          | Nightly               |                    | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
+//!| `trusted_len`        | Nightly               |                    | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
+//!| `never_type`         | Nightly               |                    | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
+//!| `termination_trait`  | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
+//!| `product_trait`      | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
+//!| `sum_trait`          | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
+//!| `from_iterator_trait` | Nightly              | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
 //!
+//! # Example on stable
+//! 
 //! ```
-//! use std::ops::Try;
 //! use woe::Result::{self, Ok, LocalErr, FatalErr};
-//! use std::result::Result as StdResult;
+//! use std::result::{Result as StdResult, Result::Ok as StdOk, Result::Err as StdErr};
 //!
 //! fn main() {
 //!     match do_thing() {
@@ -51,6 +81,61 @@
 //! fn do_thing() -> StdResult<i64, FatalError> {
 //!     let result = do_another_thing(5, 5)?;
 //!
+//!     // `result` has type `Result<i64, LocalError>`.
+//!     match result {
+//!         StdResult::Err(local_err) => {
+//!             println!("Local error: {:?}", local_err);
+//!             StdOk(i64::default())
+//!         }
+//!         StdOk(num) => StdOk(num),
+//!     }
+//! }
+//!
+//! fn do_another_thing(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
+//!     if x > y {
+//!         Ok(x)
+//!     } else if x == y {
+//!         // Make clear which error is the local error ...
+//!         LocalErr(LocalError::SomeError)
+//!     } else {
+//!         // ... and which is the fatal error
+//!         FatalErr(FatalError::CatastrophicError)
+//!     }.into_result()
+//! }
+//!
+//! #[derive(Debug)]
+//! enum LocalError {
+//!     SomeError,
+//!     AnotherError,
+//! }
+//!
+//! #[derive(Debug)]
+//! enum FatalError {
+//!     BigBadError,
+//!     CatastrophicError,
+//! }
+//! ```
+//! 
+//! # Example using `--feature 'nightly'`
+//!
+//! ```ignore
+//! # ignore this test until I figure out how to make doctests conditional on features.
+//! use std::ops::Try;
+//! use woe::Result::{self, Ok, LocalErr, FatalErr};
+//! use std::result::{Result as StdResult, Result::Ok as StdOk, Result::Err as StdErr};
+//!
+//! fn main() {
+//!     match do_thing() {
+//!         StdOk(num) => println!("Got a number: {}", num),
+//!         StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+//!     }
+//! }
+//!
+//! fn do_thing() -> StdResult<i64, FatalError> {
+//!     // `woe::Result` interoperates with `std::result::Result` without issue.
+//!     let result = do_another_thing(5, 5)?;
+//!
+//!     // `result` has type `Result<i64, LocalError>`.
 //!     match result {
 //!         StdResult::Err(local_err) => {
 //!             println!("Local error: {:?}", local_err);
@@ -61,7 +146,9 @@
 //! }
 //!
 //! fn do_another_thing(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
+//!     // `woe::Result` works as expected using the `?` operator with itself.
 //!     let result = do_third_thing(x, y)?;
+//!     // `woe::Result::from_ok` takes in a `Result<T, L>` and returns a `woe::Result<T, L, F>`.
 //!     Result::from_ok(result)
 //! }
 //!
@@ -107,8 +194,10 @@ use core::iter::TrustedLen;
 use core::ops::Try;
 use core::ops::{Deref, DerefMut};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
-#[cfg(feature="either")]
-pub use either::{Either, Either::Left, Either::Right};
+#[cfg(feature="either_methods")]
+pub use either::Either;
+#[cfg(feature="either_methods")]
+use either::Either::{Left, Right};
 #[cfg(feature="termination_trait")]
 use std::process::{ExitCode, Termination};
 
@@ -213,7 +302,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either")]
+    #[cfg(feature="either_methods")]
     pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
     where
         U: PartialEq<L>,
@@ -253,7 +342,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either")]
+    #[cfg(feature="either_methods")]
     pub fn err(self) -> Option<Either<L, F>> {
         match self {
             LocalErr(err) => Some(Left(err)),
@@ -326,7 +415,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either")]
+    #[cfg(feature="either_methods")]
     pub fn map_err<U, M, G>(self, f: U) -> Result<T, M, G>
     where
         U: FnOnce(Either<L, F>) -> Either<M, G>,
@@ -559,7 +648,7 @@ where
     }
 }
 
-#[cfg(feature="either")]
+#[cfg(feature="either_methods")]
 impl<T, L, F> Result<T, L, F>
 where
     T: Debug,
