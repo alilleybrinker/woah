@@ -5,6 +5,17 @@
 #![feature(process_exitcode_placeholder)]
 #![doc(test(attr(feature(try_trait))))]
 
+// Turn on clippy lints.
+#![deny(clippy::all)]
+#![deny(clippy::pedantic)]
+#![deny(clippy::cargo)]
+#![warn(clippy::restriction)]
+
+// TODO: Add all missing documentation so this lint passes.
+// #![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
+
 //!`woe` is a (currently nightly-only) Rust crate which provides the following type:
 //!
 //! ```text
@@ -80,16 +91,17 @@
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
 
+use core::fmt::Debug;
+use core::iter::TrustedLen;
+use core::iter::{DoubleEndedIterator, FromIterator, FusedIterator, Iterator, Product, Sum};
+use core::ops::Try;
+use core::ops::{Deref, DerefMut};
+use core::result::Result as StdResult;
 pub use either::Either;
 use either::Either::{Left, Right};
-use std::fmt::Debug;
-use std::iter::TrustedLen;
-use std::iter::{DoubleEndedIterator, FromIterator, FusedIterator, Iterator, Product, Sum};
-use std::ops::Try;
-use std::ops::{Deref, DerefMut};
 use std::process::{ExitCode, Termination};
-use std::result::Result as StdResult;
 
+/// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum Result<T, L, F> {
     Ok(T),
@@ -274,18 +286,14 @@ impl<T, L, F> Result<T, L, F> {
     {
         match self {
             Result::Ok(t) => Result::Ok(t),
-            Result::LocalErr(err) => {
-                match f(Left(err)) {
-                    Left(err) => Result::LocalErr(err),
-                    Right(err) => Result::FatalErr(err),
-                }
-            }
-            Result::FatalErr(err) => {
-                match f(Right(err)) {
-                    Left(err) => Result::LocalErr(err),
-                    Right(err) => Result::FatalErr(err),
-                }
-            }
+            Result::LocalErr(err) => match f(Left(err)) {
+                Left(err) => Result::LocalErr(err),
+                Right(err) => Result::FatalErr(err),
+            },
+            Result::FatalErr(err) => match f(Right(err)) {
+                Left(err) => Result::LocalErr(err),
+                Right(err) => Result::FatalErr(err),
+            },
         }
     }
 
@@ -348,7 +356,11 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    pub fn or<M, G>(self, res_local: Result<T, M, G>, res_fatal: Result<T, M, G>) -> Result<T, M, G> {
+    pub fn or<M, G>(
+        self,
+        res_local: Result<T, M, G>,
+        res_fatal: Result<T, M, G>,
+    ) -> Result<T, M, G> {
         match self {
             Result::Ok(t) => Result::Ok(t),
             Result::LocalErr(_) => res_local,
@@ -664,7 +676,9 @@ where
     L: DerefMut,
     F: DerefMut,
 {
-    pub fn as_deref_mut_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut <F as Deref>::Target> {
+    pub fn as_deref_mut_err(
+        &mut self,
+    ) -> Result<&mut T, &mut <L as Deref>::Target, &mut <F as Deref>::Target> {
         match self {
             Result::Ok(t) => Result::Ok(t),
             Result::LocalErr(err) => Result::LocalErr(err.deref_mut()),
@@ -841,6 +855,8 @@ impl<T: Default, L, F> Result<T, L, F> {
     }
 }
 
+/// An iterator over the value in an `Ok` variant of a `woe::Result`.
+#[derive(Debug)]
 pub struct IntoIter<T> {
     inner: Option<T>,
 }
@@ -854,6 +870,8 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
+/// An iterator over a reference to the `Ok` variant of a `woe::Result`.
+#[derive(Debug)]
 pub struct Iter<'a, T: 'a> {
     inner: Option<&'a T>,
 }
@@ -884,6 +902,9 @@ impl<'a, T> FusedIterator for Iter<'a, T> {}
 
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
+
+/// An iterator over a mutable reference to the `Ok` variant of a `woe::Result`.
+#[derive(Debug)]
 pub struct IterMut<'a, T: 'a> {
     inner: Option<&'a mut T>,
 }
