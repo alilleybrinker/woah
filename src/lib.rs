@@ -1,12 +1,11 @@
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woe/issues/")]
-
 // Turn on the try trait for the regular code and for documentation tests.
-#![cfg_attr(feature="try_trait", feature(try_trait))]
-#![cfg_attr(feature="try_trait", doc(test(attr(feature(try_trait)))))]
-#![cfg_attr(feature="trusted_len", feature(trusted_len))]
-#![cfg_attr(feature="never_type", feature(never_type))]
-#![cfg_attr(feature="termination_trait", feature(termination_trait_lib))]
-#![cfg_attr(feature="termination_trait", feature(process_exitcode_placeholder))]
+#![cfg_attr(feature = "try_trait", feature(try_trait))]
+#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait)))))]
+#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
+#![cfg_attr(feature = "never_type", feature(never_type))]
+#![cfg_attr(feature = "termination_trait", feature(termination_trait_lib))]
+#![cfg_attr(feature = "termination_trait", feature(process_exitcode_placeholder))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
@@ -39,19 +38,19 @@
 //! the local code to handle any local errors without propagating them.
 //!
 //! # Features
-//! 
+//!
 //! `woe` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
 //! to get the full power of the `woe::Result` type, including:
-//! 
+//!
 //! * Being able to use it with the question mark operator,
 //! * Being able to make it the return type of `fn main`,
 //! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
 //!   from `Vec<woe::Result<T, L, F>` into `woe::Result<Vec<T>, L, F>` via the `collect` method).
-//! 
+//!
 //! The following table is the full list of features. If you want to use `woe` without any dependencies,
 //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
 //! methods.
-//! 
+//!
 //!| Feature Name         | Channels              | Depends On         | What It Does |
 //!|:---------------------|:----------------------|:-------------------|:-------------|
 //!| `default`            | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
@@ -66,7 +65,7 @@
 //!| `from_iterator_trait` | Nightly              | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
 //!
 //! # Example on stable
-//! 
+//!
 //! ```
 //! use woe::Result::{self, Ok, LocalErr, FatalErr};
 //! use std::result::{Result as StdResult, Result::Ok as StdOk, Result::Err as StdErr};
@@ -115,8 +114,8 @@
 //!     CatastrophicError,
 //! }
 //! ```
-//! 
-//! # Example using `--feature 'nightly'`
+//!
+//! # Example on nightly (and using `--features 'nightly'`)
 //!
 //! ```ignore
 //! # ignore this test until I figure out how to make doctests conditional on features.
@@ -177,39 +176,49 @@
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 use crate::LoopState::{Break, Continue};
 use crate::Result::{FatalErr, LocalErr, Ok};
 use core::fmt::Debug;
-use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
-#[cfg(feature="from_iterator_trait")]
+#[cfg(feature = "from_iterator_trait")]
 use core::iter::FromIterator;
-#[cfg(feature="product_trait")]
+#[cfg(feature = "product_trait")]
 use core::iter::Product;
-#[cfg(feature="sum_trait")]
+#[cfg(feature = "sum_trait")]
 use core::iter::Sum;
-#[cfg(feature="trusted_len")]
+#[cfg(feature = "trusted_len")]
 use core::iter::TrustedLen;
-#[cfg(feature="try_trait")]
+use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
+#[cfg(feature = "try_trait")]
 use core::ops::Try;
 use core::ops::{Deref, DerefMut};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
-#[cfg(feature="either_methods")]
+#[cfg(feature = "either_methods")]
 pub use either::Either;
-#[cfg(feature="either_methods")]
+#[cfg(feature = "either_methods")]
 use either::Either::{Left, Right};
-#[cfg(feature="termination_trait")]
+#[cfg(feature = "termination_trait")]
 use std::process::{ExitCode, Termination};
 
 /// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
+///
+/// See the [`woe`](index.html) top-level documentation for details.
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+#[must_use = "this `Result` may be a `LocalErr`, which should be handled, or a `FatalErr`, which should be propagated"]
 pub enum Result<T, L, F> {
+    /// Contains the success value.
     Ok(T),
+    /// Contains a local error value (which should be handled)
     LocalErr(L),
+    /// Contains a fatal error value (which should be propagated)
     FatalErr(F),
 }
 
-#[cfg(feature="try_trait")]
+#[cfg(feature = "try_trait")]
 impl<T, L, F> Try for Result<T, L, F> {
     type Ok = StdResult<T, L>;
     type Error = F;
@@ -234,7 +243,7 @@ impl<T, L, F> Try for Result<T, L, F> {
     }
 }
 
-#[cfg(not(feature="try_trait"))]
+#[cfg(not(feature = "try_trait"))]
 impl<T, L, F> Result<T, L, F> {
     pub fn into_result(self) -> StdResult<StdResult<T, L>, F> {
         match self {
@@ -302,7 +311,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either_methods")]
+    #[cfg(feature = "either_methods")]
     pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
     where
         U: PartialEq<L>,
@@ -342,7 +351,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either_methods")]
+    #[cfg(feature = "either_methods")]
     pub fn err(self) -> Option<Either<L, F>> {
         match self {
             LocalErr(err) => Some(Left(err)),
@@ -415,7 +424,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature="either_methods")]
+    #[cfg(feature = "either_methods")]
     pub fn map_err<U, M, G>(self, f: U) -> Result<T, M, G>
     where
         U: FnOnce(Either<L, F>) -> Either<M, G>,
@@ -648,7 +657,7 @@ where
     }
 }
 
-#[cfg(feature="either_methods")]
+#[cfg(feature = "either_methods")]
 impl<T, L, F> Result<T, L, F>
 where
     T: Debug,
@@ -728,7 +737,7 @@ where
     }
 }
 
-#[cfg(feature="never_type")]
+#[cfg(feature = "never_type")]
 impl<T, L, F> Result<T, L, F>
 where
     L: Into<!>,
@@ -886,7 +895,7 @@ where
     }
 }
 
-#[cfg(feature="from_iterator_trait")]
+#[cfg(feature = "from_iterator_trait")]
 impl<A, V, L, F> FromIterator<Result<A, L, F>> for Result<V, L, F>
 where
     V: FromIterator<A>,
@@ -926,7 +935,7 @@ impl<T, L, F> IntoIterator for Result<T, L, F> {
     }
 }
 
-#[cfg(feature="product_trait")]
+#[cfg(feature = "product_trait")]
 impl<T, U, L, F> Product<Result<U, L, F>> for Result<T, L, F>
 where
     T: Product<U>,
@@ -939,7 +948,7 @@ where
     }
 }
 
-#[cfg(feature="sum_trait")]
+#[cfg(feature = "sum_trait")]
 impl<T, U, L, F> Sum<Result<U, L, F>> for Result<T, L, F>
 where
     T: Sum<U>,
@@ -952,7 +961,7 @@ where
     }
 }
 
-#[cfg(feature="termination_trait")]
+#[cfg(feature = "termination_trait")]
 impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
@@ -967,7 +976,7 @@ where
     }
 }
 
-#[cfg(feature="termination_trait")]
+#[cfg(feature = "termination_trait")]
 impl<L, F> Termination for Result<!, L, F>
 where
     L: Debug,
@@ -1033,7 +1042,7 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 impl<'a, T> FusedIterator for Iter<'a, T> {}
 
-#[cfg(feature="trusted_len")]
+#[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
 /// An iterator over a mutable reference to the `Ok` variant of a `woe::Result`.
@@ -1066,16 +1075,24 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
-#[cfg(feature="trusted_len")]
+#[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 pub(crate) struct ResultShunt<'a, I, L, F> {
     iter: I,
     error: &'a mut Result<(), L, F>,
 }
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 pub(crate) fn process_results<I, T, L, F, G, U>(iter: I, mut f: G) -> Result<U, L, F>
 where
     I: Iterator<Item = Result<T, L, F>>,
@@ -1090,7 +1107,11 @@ where
     error.map(|()| value)
 }
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 impl<I, T, L, F> Iterator for ResultShunt<'_, I, L, F>
 where
     I: Iterator<Item = Result<T, L, F>>,
@@ -1132,14 +1153,22 @@ where
     }
 }
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 #[derive(PartialEq)]
 enum LoopState<C, B> {
     Continue(C),
     Break(B),
 }
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 impl<C, B> Try for LoopState<C, B> {
     type Ok = C;
     type Error = B;
@@ -1163,7 +1192,11 @@ impl<C, B> Try for LoopState<C, B> {
     }
 }
 
-#[cfg(any(feature="from_iterator_trait", feature="product_trait", feature="sum_trait"))]
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait"
+))]
 impl<R: Try> LoopState<R::Ok, R> {
     #[inline]
     fn from_try(r: R) -> Self {
