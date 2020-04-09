@@ -1,6 +1,6 @@
 [package]
 name = "woe"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Andrew Lilley Brinker <andrewabrinker@gmail.com>"]
 description = """
     A Result type that differentiates between local errors (which can be handled)
