@@ -57,6 +57,12 @@ sum_trait = ["try_trait"]
 # Enable the `FromIterator` trait, whose implementation requires the `Try` trait.
 from_iterator_trait = ["try_trait"]
 
+# Make the crate `no_std`-compatible, meaning it can be used in contexts which
+# don't have the standard library. Note that this deactivates the `termination_trait`
+# feature, which relies on `std::process` (not part of `core`, and thus not supported
+# in a `no_std` context).
+no_std = []
+
 [package.metadata.docs.rs]
 # Turn on all features on docs.rs (documentation explains which are nightly-only)
 all-features = true

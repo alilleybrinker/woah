@@ -1,10 +1,15 @@
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woe/issues/")]
-// Turn on the try trait for the regular code and for documentation tests.
+#![cfg_attr(feature = "no_std", no_std)]
+// Turn on the `Try` trait for both code and documentation tests.
 #![cfg_attr(feature = "try_trait", feature(try_trait))]
 #![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait)))))]
+// Turn on the `TrustedLen` trait.
 #![cfg_attr(feature = "trusted_len", feature(trusted_len))]
+// Enable use of the never type (`!`) in generic code.
 #![cfg_attr(feature = "never_type", feature(never_type))]
+// Turn on the `Termination` trait.
 #![cfg_attr(feature = "termination_trait", feature(termination_trait_lib))]
+// Turn on the `ExitCode` type.
 #![cfg_attr(feature = "termination_trait", feature(process_exitcode_placeholder))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
@@ -51,19 +56,20 @@
 //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
 //! methods.
 //!
-//!| Feature Name         | Channels              | Depends On         | What It Does |
-//!|:---------------------|:----------------------|:-------------------|:-------------|
-//!| `default`            | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
-//!| `either_methods`     | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
-//!| `nightly`            | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
-//!| `try_trait`          | Nightly               |                    | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
-//!| `trusted_len`        | Nightly               |                    | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
-//!| `never_type`         | Nightly               |                    | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
-//!| `termination_trait`  | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
-//!| `product_trait`      | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
-//!| `sum_trait`          | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
-//!| `from_iterator_trait` | Nightly              | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
-//!
+//!| Feature Name          | Channels              | Depends On         | What It Does |
+//!|:----------------------|:----------------------|:-------------------|:-------------|
+//!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
+//!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+//!| `no_std`              | Stable, Beta, Nightly | None               | Makes the crate `no_std` compatible. _This conflicts with the `termination_trait` feature, so turning on `no_std` will automatically disable that feature._ Use the flag `--features no_std,nightly` to get a fully-featured and `no-std`-compatible API. |
+//!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
+//!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
+//!| `trusted_len`         | Nightly               | None               | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
+//!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
+//!| `termination_trait`   | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
+//!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
+//!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
+//!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
+//! 
 //! # Example on stable
 //!
 //! ```
@@ -201,7 +207,7 @@ use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as Std
 pub use either::Either;
 #[cfg(feature = "either_methods")]
 use either::Either::{Left, Right};
-#[cfg(feature = "termination_trait")]
+#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
 use std::process::{ExitCode, Termination};
 
 /// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
@@ -961,7 +967,7 @@ where
     }
 }
 
-#[cfg(feature = "termination_trait")]
+#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
 impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
@@ -976,7 +982,7 @@ where
     }
 }
 
-#[cfg(feature = "termination_trait")]
+#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
 impl<L, F> Termination for Result<!, L, F>
 where
     L: Debug,
