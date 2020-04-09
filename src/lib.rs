@@ -80,6 +80,8 @@
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
 
+pub use either::Either;
+use either::Either::{Left, Right};
 use std::fmt::Debug;
 use std::iter::TrustedLen;
 use std::iter::{DoubleEndedIterator, FromIterator, FusedIterator, Iterator, Product, Sum};
@@ -155,6 +157,18 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
+    where
+        U: PartialEq<L>,
+        Y: PartialEq<F>,
+    {
+        match (self, e) {
+            (Result::LocalErr(err), Either::Left(e)) if *e == *err => true,
+            (Result::FatalErr(err), Either::Right(e)) if *e == *err => true,
+            _ => false,
+        }
+    }
+
     pub fn contains_local_err<E>(&self, e: &E) -> bool
     where
         E: PartialEq<L>,
@@ -178,6 +192,14 @@ impl<T, L, F> Result<T, L, F> {
     pub fn ok(self) -> Option<T> {
         match self {
             Result::Ok(t) => Some(t),
+            _ => None,
+        }
+    }
+
+    pub fn err(self) -> Option<Either<L, F>> {
+        match self {
+            Result::LocalErr(err) => Some(Left(err)),
+            Result::FatalErr(err) => Some(Right(err)),
             _ => None,
         }
     }
@@ -246,6 +268,27 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    pub fn map_err<U, M, G>(self, f: U) -> Result<T, M, G>
+    where
+        U: FnOnce(Either<L, F>) -> Either<M, G>,
+    {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => {
+                match f(Left(err)) {
+                    Left(err) => Result::LocalErr(err),
+                    Right(err) => Result::FatalErr(err),
+                }
+            }
+            Result::FatalErr(err) => {
+                match f(Right(err)) {
+                    Left(err) => Result::LocalErr(err),
+                    Right(err) => Result::FatalErr(err),
+                }
+            }
+        }
+    }
+
     pub fn map_local_err<U, S>(self, f: U) -> Result<T, S, F>
     where
         U: FnOnce(L) -> S,
@@ -305,6 +348,14 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    pub fn or<M, G>(self, res_local: Result<T, M, G>, res_fatal: Result<T, M, G>) -> Result<T, M, G> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(_) => res_local,
+            Result::FatalErr(_) => res_fatal,
+        }
+    }
+
     pub fn or_local<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
         match self {
             Result::Ok(t) => Result::Ok(t),
@@ -318,6 +369,18 @@ impl<T, L, F> Result<T, L, F> {
             Result::Ok(t) => Result::Ok(t),
             Result::LocalErr(err) => Result::LocalErr(err),
             Result::FatalErr(_) => res,
+        }
+    }
+
+    pub fn or_else<O, P, M, G>(self, op_local: O, op_fatal: P) -> Result<T, M, G>
+    where
+        O: FnOnce(L) -> Result<T, M, G>,
+        P: FnOnce(F) -> Result<T, M, G>,
+    {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => op_local(err),
+            Result::FatalErr(err) => op_fatal(err),
         }
     }
 
@@ -440,6 +503,29 @@ where
 impl<T, L, F> Result<T, L, F>
 where
     T: Debug,
+    L: Debug,
+    F: Debug,
+{
+    pub fn unwrap_err(self) -> Either<L, F> {
+        match self {
+            Result::Ok(t) => panic!("{:?}", t),
+            Result::LocalErr(err) => Left(err),
+            Result::FatalErr(err) => Right(err),
+        }
+    }
+
+    pub fn expect_err(self, msg: &str) -> Either<L, F> {
+        match self {
+            Result::Ok(_) => panic!("{}", msg),
+            Result::LocalErr(err) => Left(err),
+            Result::FatalErr(err) => Right(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F>
+where
+    T: Debug,
     F: Debug,
 {
     pub fn unwrap_local_err(self) -> L {
@@ -523,6 +609,20 @@ where
 impl<T, L, F> Result<T, L, F>
 where
     L: Deref,
+    F: Deref,
+{
+    pub fn as_deref_err(&self) -> Result<&T, &<L as Deref>::Target, &<F as Deref>::Target> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err.deref()),
+            Result::FatalErr(err) => Result::FatalErr(err.deref()),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F>
+where
+    L: Deref,
 {
     pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
         match self {
@@ -555,6 +655,20 @@ where
             Result::Ok(t) => Result::Ok(t.deref_mut()),
             Result::LocalErr(err) => Result::LocalErr(err),
             Result::FatalErr(err) => Result::FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F>
+where
+    L: DerefMut,
+    F: DerefMut,
+{
+    pub fn as_deref_mut_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut <F as Deref>::Target> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::LocalErr(err) => Result::LocalErr(err.deref_mut()),
+            Result::FatalErr(err) => Result::FatalErr(err.deref_mut()),
         }
     }
 }
