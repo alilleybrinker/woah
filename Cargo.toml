@@ -34,7 +34,7 @@ nightly = [
     "from_iterator_trait"
 ]
 
-# Allow `woe::Result` implement `std::ops::Try`
+# Allow `woe::Result` to implement `std::ops::Try`
 try_trait = []
 
 # Enable `woe::{IntoIter, Iter, IterMut}` to all implement `TrustedLen`.
