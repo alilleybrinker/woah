@@ -292,9 +292,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`Ok`]: enum.Result.html#variant.Ok
     ///
-    /// # Examples
-    ///
-    /// Basic usage:
+    /// # Example
     ///
     /// ```
     /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
@@ -321,9 +319,7 @@ impl<T, L, F> Result<T, L, F> {
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
     ///
-    /// # Examples
-    ///
-    /// Basic usage:
+    /// # Example
     ///
     /// ```
     /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
@@ -345,9 +341,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     ///
-    /// # Examples
-    ///
-    /// Basic usage:
+    /// # Example
     ///
     /// ```
     /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
@@ -372,9 +366,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
     ///
-    /// # Examples
-    ///
-    /// Basic usage:
+    /// # Example
     ///
     /// ```
     /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
