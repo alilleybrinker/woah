@@ -13,13 +13,11 @@
 #![cfg_attr(feature = "termination_trait", feature(process_exitcode_placeholder))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
-#![deny(clippy::pedantic)]
 #![deny(clippy::cargo)]
-#![warn(clippy::restriction)]
 // Turn on useful warnings (make `deny` once all are resolved.)
-#![warn(missing_docs)]
-#![warn(missing_doc_code_examples)]
-#![warn(private_doc_tests)]
+//#![warn(missing_docs)]
+//#![warn(missing_doc_code_examples)]
+//#![warn(private_doc_tests)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
@@ -40,147 +38,12 @@
 //!
 //! The important thing to note is that using the question mark operator on `woe::Result` causes
 //! any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
-//! the local code to handle any local errors without propagating them.
+//! the local code to handle local errors without propagating them.
 //!
-//! # Features
-//!
-//! `woe` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
-//! to get the full power of the `woe::Result` type, including:
-//!
-//! * Being able to use it with the question mark operator,
-//! * Being able to make it the return type of `fn main`,
-//! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
-//!   from `Vec<woe::Result<T, L, F>` into `woe::Result<Vec<T>, L, F>` via the `collect` method).
-//!
-//! The following table is the full list of features. If you want to use `woe` without any dependencies,
-//! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
-//! methods.
-//!
-//!| Feature Name          | Channels              | Depends On         | What It Does |
-//!|:----------------------|:----------------------|:-------------------|:-------------|
-//!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
-//!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
-//!| `no_std`              | Stable, Beta, Nightly | None               | Makes the crate `no_std` compatible. _This conflicts with the `termination_trait` feature, so turning on `no_std` will automatically disable that feature._ Use the flag `--features no_std,nightly` to get a fully-featured and `no-std`-compatible API. |
-//!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
-//!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
-//!| `trusted_len`         | Nightly               | None               | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
-//!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
-//!| `termination_trait`   | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
-//!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
-//!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
-//!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
-//! 
-//! # Example on stable
-//!
-//! ```
-//! use woe::Result::{self, Ok, LocalErr, FatalErr};
-//! use std::result::{Result as StdResult, Result::Ok as StdOk, Result::Err as StdErr};
-//!
-//! fn main() {
-//!     match do_thing() {
-//!         StdOk(num) => println!("Got a number: {}", num),
-//!         StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
-//!     }
-//! }
-//!
-//! fn do_thing() -> StdResult<i64, FatalError> {
-//!     let result = do_another_thing(5, 5)?;
-//!
-//!     // `result` has type `Result<i64, LocalError>`.
-//!     match result {
-//!         StdResult::Err(local_err) => {
-//!             println!("Local error: {:?}", local_err);
-//!             StdOk(i64::default())
-//!         }
-//!         StdOk(num) => StdOk(num),
-//!     }
-//! }
-//!
-//! fn do_another_thing(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
-//!     if x > y {
-//!         Ok(x)
-//!     } else if x == y {
-//!         // Make clear which error is the local error ...
-//!         LocalErr(LocalError::SomeError)
-//!     } else {
-//!         // ... and which is the fatal error
-//!         FatalErr(FatalError::CatastrophicError)
-//!     }.into_result()
-//! }
-//!
-//! #[derive(Debug)]
-//! enum LocalError {
-//!     SomeError,
-//!     AnotherError,
-//! }
-//!
-//! #[derive(Debug)]
-//! enum FatalError {
-//!     BigBadError,
-//!     CatastrophicError,
-//! }
-//! ```
-//!
-//! # Example on nightly (and using `--features 'nightly'`)
-//!
-//! ```ignore
-//! # ignore this test until I figure out how to make doctests conditional on features.
-//! use std::ops::Try;
-//! use woe::Result::{self, Ok, LocalErr, FatalErr};
-//! use std::result::{Result as StdResult, Result::Ok as StdOk, Result::Err as StdErr};
-//!
-//! fn main() {
-//!     match do_thing() {
-//!         StdOk(num) => println!("Got a number: {}", num),
-//!         StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
-//!     }
-//! }
-//!
-//! fn do_thing() -> StdResult<i64, FatalError> {
-//!     // `woe::Result` interoperates with `std::result::Result` without issue.
-//!     let result = do_another_thing(5, 5)?;
-//!
-//!     // `result` has type `Result<i64, LocalError>`.
-//!     match result {
-//!         StdResult::Err(local_err) => {
-//!             println!("Local error: {:?}", local_err);
-//!             StdOk(i64::default())
-//!         }
-//!         StdOk(num) => StdOk(num),
-//!     }
-//! }
-//!
-//! fn do_another_thing(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
-//!     // `woe::Result` works as expected using the `?` operator with itself.
-//!     let result = do_third_thing(x, y)?;
-//!     // `woe::Result::from_ok` takes in a `Result<T, L>` and returns a `woe::Result<T, L, F>`.
-//!     Result::from_ok(result)
-//! }
-//!
-//! fn do_third_thing(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
-//!     if x > y {
-//!         Ok(x)
-//!     } else if x == y {
-//!         LocalErr(LocalError::SomeError)
-//!     } else {
-//!         FatalErr(FatalError::CatastrophicError)
-//!     }
-//! }
-//!
-//! #[derive(Debug)]
-//! enum LocalError {
-//!     SomeError,
-//!     AnotherError,
-//! }
-//!
-//! #[derive(Debug)]
-//! enum FatalError {
-//!     BigBadError,
-//!     CatastrophicError,
-//! }
-//! ```
+//! [__For more details, check out the `docs` module.__][docs]
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
+//! [docs]: docs/index.html "Link to the docs module"
 
 #[cfg(any(
     feature = "from_iterator_trait",
@@ -204,11 +67,190 @@ use core::ops::Try;
 use core::ops::{Deref, DerefMut};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 #[cfg(feature = "either_methods")]
-pub use either::Either;
-#[cfg(feature = "either_methods")]
-use either::Either::{Left, Right};
+use either::Either::{self, Left, Right};
 #[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
 use std::process::{ExitCode, Termination};
+
+pub mod prelude {
+    //! A collection of re-exports to make `woe::Result` the standard result type.
+    //!
+    //! This keeps `std::result::Result` available as `StdResult`, and imports additional types and traits
+    //! to make `woe::Result` fully-featured, based on feature flags.
+
+    // Replace `std::result::Result` with `woe::Result`.
+    pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Ok};
+    pub use std::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
+
+    // Import the Try trait.
+    #[cfg(feature = "try_trait")]
+    pub use std::ops::Try;
+
+    // Import the Termination trait.
+    #[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
+    pub use std::process::Termination;
+
+    // Import the FromIterator trait.
+    #[cfg(feature = "from_iterator_trait")]
+    pub use core::iter::FromIterator;
+
+    // Import the Product trait.
+    #[cfg(feature = "product_trait")]
+    pub use core::iter::Product;
+
+    // Import the Sum trait.
+    #[cfg(feature = "sum_trait")]
+    pub use core::iter::Sum;
+
+    // Import the TrustedLen trait.
+    #[cfg(feature = "trusted_len")]
+    pub use core::iter::TrustedLen;
+}
+
+pub mod docs {
+    //! Documentation, including crate features and examples.
+    //!
+    //! # Why are the docs like this?
+    //!
+    //! Putting the docs in Rustdoc means they can be run as documentation tests. Breaking them up into modules and
+    //! submodules helps keep them from getting too unwieldy, so people can still navigate the API itself with ease.
+
+    pub mod concept {
+        //! Explanation of why `woe` exists.
+
+        // TODO: Write the rest of this.
+    }
+
+    pub mod features {
+        //! Features to configure based on stable vs. nightly, std vs. no_std, or a desire for no dependencies.
+        //!
+        //! # Features
+        //!
+        //! `woe` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
+        //! to get the full power of the `woe::Result` type, including:
+        //!
+        //! * Being able to use it with the question mark operator,
+        //! * Being able to make it the return type of `fn main`,
+        //! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
+        //!   from `Vec<woe::Result<T, L, F>` into `woe::Result<Vec<T>, L, F>` via the `collect` method).
+        //!
+        //! The following table is the full list of features. If you want to use `woe` without any dependencies,
+        //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
+        //! methods.
+        //!
+        //!| Feature Name          | Channels              | Depends On         | What It Does |
+        //!|:----------------------|:----------------------|:-------------------|:-------------|
+        //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
+        //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+        //!| `no_std`              | Stable, Beta, Nightly | None               | Makes the crate `no_std` compatible. _This conflicts with the `termination_trait` feature, so turning on `no_std` will automatically disable that feature._ Use the flag `--features no_std,nightly` to get a fully-featured and `no-std`-compatible API. |
+        //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
+        //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
+        //!| `trusted_len`         | Nightly               | None               | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
+        //!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
+        //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
+        //!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
+        //!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
+        //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
+    }
+
+    pub mod examples {
+        //! Examples of using `woe` on both stable and nightly.
+        //!
+        //! # Table of Contents
+        //!
+        //! 1. [Example on stable](#example-on-stable)
+        //! 2. [Example on nightly](#example-on-nightly)
+        //!
+        //! # Example on stable
+        //!
+        //! ```
+        //! use woe::prelude::*;
+        //! use std::cmp::Ordering;
+        //!
+        //! match get_number() {
+        //!     StdOk(num) => println!("Got a number: {}", num),
+        //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+        //! }
+        //!
+        //! fn get_number() -> StdResult<i64, FatalError> {
+        //!     // propagate any fatal error
+        //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 5)?;
+        //!
+        //!     // handle any local error
+        //!     let num = result.unwrap_or_else(|local_err| {
+        //!         println!("Local error: {:?}", local_err);
+        //!         i64::default()
+        //!     });
+        //!
+        //!     StdOk(num)
+        //! }
+        //!
+        //! fn compare_numbers(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
+        //!     match x.cmp(&y) {
+        //!         Ordering::Greater => Ok(x),
+        //!         Ordering::Equal => LocalErr(LocalError::SomeError),
+        //!         Ordering::Less => FatalErr(FatalError::CatastrophicError),
+        //!     }.into_result()
+        //! }
+        //!
+        //! #[derive(Debug)]
+        //! enum LocalError { SomeError, AnotherError }
+        //!
+        //! #[derive(Debug)]
+        //! enum FatalError { BigBadError, CatastrophicError }
+        //! ```
+        //!
+        //! # Example on nightly
+        //!
+        //! This uses `--features nightly` to enable nightly-only features.
+        //!
+        //! ```
+        //! use woe::prelude::*;
+        //! use std::cmp::Ordering;
+        //!
+        //! # #[cfg(feature = "nightly")]
+        //! # fn main() {
+        //! match get_number() {
+        //!     StdOk(num) => println!("Got a number: {}", num),
+        //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+        //! }
+        //! # }
+        //! #
+        //! # #[cfg(not(feature = "nightly"))]
+        //! # fn main() {}
+        //!
+        //! # #[cfg(feature = "nightly")]
+        //! fn get_number() -> StdResult<i64, FatalError> {
+        //!     // propagate any fatal error
+        //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 10)?;
+        //!
+        //!     // handle any local error
+        //!     let num = result.unwrap_or_else(|local_err| {
+        //!         println!("Local error: {:?}", local_err);
+        //!         i64::default()
+        //!     });
+        //!
+        //!     StdOk(num)
+        //! }
+        //!
+        //! # #[cfg(feature = "nightly")]
+        //! fn compare_numbers(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
+        //!     match x.cmp(&y) {
+        //!         Ordering::Greater => Ok(x),
+        //!         Ordering::Equal => LocalErr(LocalError::Equal),
+        //!         Ordering::Less => FatalErr(FatalError::Less),
+        //!     }
+        //! }
+        //!
+        //! # #[cfg(feature = "nightly")]
+        //! #[derive(Debug)]
+        //! enum LocalError { Equal }
+        //!
+        //! # #[cfg(feature = "nightly")]
+        //! #[derive(Debug)]
+        //! enum FatalError { Less }
+        //! ```
+    }
+}
 
 /// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 ///
@@ -231,6 +273,15 @@ impl<T, L, F> Try for Result<T, L, F> {
 
     /// Convert `woe::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
     /// in `?` behavior.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
+    /// assert_eq!(result, StdOk(StdErr("a local error")));
+    /// ```
     #[inline]
     fn into_result(self) -> StdResult<StdResult<T, L>, F> {
         match self {
@@ -241,6 +292,15 @@ impl<T, L, F> Try for Result<T, L, F> {
     }
 
     /// Construct the `FatalErr` variant based on some error.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
+    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
+    /// ```
     #[inline]
     fn from_error(err: F) -> Self {
         FatalErr(err)
@@ -248,6 +308,20 @@ impl<T, L, F> Try for Result<T, L, F> {
 
     /// Construct either an `Ok` or `LocalErr` variant based on a
     /// `Result`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// // Construct a `LocalErr` variant.
+    /// let local_err: Result<i64, &str, &str> = Result::from_ok(StdErr("a local error"));
+    /// assert_eq!(local_err, LocalErr("a local error"));
+    ///
+    /// // Construct an `Ok` variant.
+    /// let ok: Result<i64, &str, &str> = Result::from_ok(StdOk(42));
+    /// assert_eq!(ok, Ok(42));
+    /// ```
     #[inline]
     fn from_ok(ok: StdResult<T, L>) -> Self {
         match ok {
@@ -261,6 +335,15 @@ impl<T, L, F> Try for Result<T, L, F> {
 impl<T, L, F> Result<T, L, F> {
     /// Convert `woe::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
     /// in `?` behavior.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
+    /// assert_eq!(result, StdOk(StdErr("a local error")));
+    /// ```
     #[inline]
     pub fn into_result(self) -> StdResult<StdResult<T, L>, F> {
         match self {
@@ -271,6 +354,15 @@ impl<T, L, F> Result<T, L, F> {
     }
 
     /// Construct the `FatalErr` variant based on some error.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
+    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
+    /// ```
     #[inline]
     pub fn from_error(err: F) -> Self {
         FatalErr(err)
@@ -278,6 +370,15 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Construct either an `Ok` or `LocalErr` variant based on a
     /// `Result`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
+    /// assert_eq!(result, StdOk(StdErr("a local error")));
+    /// ```
     #[inline]
     pub fn from_ok(ok: StdResult<T, L>) -> Self {
         match ok {
@@ -295,13 +396,14 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
+    /// use woe::prelude::*;
+    ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_ok(), true);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
     /// assert_eq!(x.is_ok(), false);
-    /// 
+    ///
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
     /// assert_eq!(x.is_ok(), false);
     /// ```
@@ -322,16 +424,18 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
+    /// use woe::prelude::*;
+    ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
     /// assert_eq!(x.is_err(), true);
-    /// 
+    ///
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
     /// assert_eq!(x.is_err(), true);
     /// ```
+    #[must_use = "if you intended to assert that this is err, consider `.unwrap_err()` instead"]
     #[inline]
     pub fn is_err(&self) -> bool {
         !self.is_ok()
@@ -344,16 +448,18 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
+    /// use woe::prelude::*;
+    ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_local_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
     /// assert_eq!(x.is_local_err(), true);
-    /// 
+    ///
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
     /// assert_eq!(x.is_local_err(), false);
     /// ```
+    #[must_use = "if you intended to assert that this is local_err, consider `.unwrap_local_err()` instead"]
     #[inline]
     pub fn is_local_err(&self) -> bool {
         match self {
@@ -369,16 +475,18 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// # use woe::{Result, Result::Ok as Ok, Result::LocalErr as LocalErr, Result::FatalErr as FatalErr};
+    /// use woe::prelude::*;
+    ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_fatal_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
     /// assert_eq!(x.is_fatal_err(), false);
-    /// 
+    ///
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
     /// assert_eq!(x.is_fatal_err(), true);
     /// ```
+    #[must_use = "if you intended to assert that this is fatal_err, consider `.unwrap_fatal_err()` instead"]
     #[inline]
     pub fn is_fatal_err(&self) -> bool {
         match self {
@@ -387,6 +495,25 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Returns `true` if the result is an [`Ok`] value containing the given value.
+    ///
+    /// [`Ok`]: enum.Result.html#variant.Ok
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use woe::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Ok(2);
+    /// assert_eq!(x.contains(&2), true);
+    ///
+    /// let x: Result<u32, &str, &str> = Ok(3);
+    /// assert_eq!(x.contains(&2), false);
+    ///
+    /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
+    /// assert_eq!(x.contains(&2), false);
+    /// ```
+    #[must_use]
     #[inline]
     pub fn contains<U>(&self, x: &U) -> bool
     where
@@ -399,6 +526,7 @@ impl<T, L, F> Result<T, L, F> {
     }
 
     #[cfg(feature = "either_methods")]
+    #[must_use]
     #[inline]
     pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
     where
@@ -412,6 +540,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    #[must_use]
     #[inline]
     pub fn contains_local_err<E>(&self, e: &E) -> bool
     where
@@ -423,6 +552,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    #[must_use]
     #[inline]
     pub fn contains_fatal_err<E>(&self, e: &E) -> bool
     where
