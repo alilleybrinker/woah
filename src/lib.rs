@@ -1,3 +1,27 @@
+//!`woe` is a Rust crate which provides the following type:
+//!
+//! ```text
+//! enum Result<T, L, F> {
+//!     Ok(T),
+//!     LocalErr(L),
+//!     FatalErr(F),
+//! }
+//! ```
+//!
+//! This type differentiates between "local errors" which can be handled and "fatal errors" which can't, to
+//! enable the error handling pattern described by Tyler Neely (@spacejam) in the blog post ["Error Handling
+//! in a Correctness-Critical Rust Project"][post]. `woe::Result` is intended to be a more ergonomic
+//! alternative to the `Result<Result<T, LocalError>, FatalError>` type proposed in the post.
+//!
+//! The important thing to note is that using the question mark operator on `woe::Result` causes
+//! any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
+//! the local code to handle local errors without propagating them.
+//!
+//! [__For more details, read the `docs` module.__][docs]
+//!
+//! [post]: http://sled.rs/errors.html "Link to the blog post"
+//! [docs]: docs/index.html "Link to the docs module"
+
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woe/issues/")]
 #![cfg_attr(feature = "no_std", no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
@@ -20,30 +44,6 @@
 //#![warn(private_doc_tests)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
-
-//!`woe` is a Rust crate which provides the following type:
-//!
-//! ```text
-//! enum Result<T, L, F> {
-//!     Ok(T),
-//!     LocalErr(L),
-//!     FatalErr(F),
-//! }
-//! ```
-//!
-//! This type differentiates between "local errors" which can be handled and "fatal errors" which can't, to
-//! enable the error handling pattern described by Tyler Neely (@spacejam) in the blog post ["Error Handling
-//! in a Correctness-Critical Rust Project"][post]. `woe::Result` is intended to be a more ergonomic
-//! alternative to the `Result<Result<T, LocalError>, FatalError>` type proposed in the post.
-//!
-//! The important thing to note is that using the question mark operator on `woe::Result` causes
-//! any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
-//! the local code to handle local errors without propagating them.
-//!
-//! [__For more details, check out the `docs` module.__][docs]
-//!
-//! [post]: http://sled.rs/errors.html "Link to the blog post"
-//! [docs]: docs/index.html "Link to the docs module"
 
 #[cfg(any(
     feature = "from_iterator_trait",
@@ -68,6 +68,9 @@ use core::ops::{Deref, DerefMut};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 #[cfg(feature = "either_methods")]
 use either::Either::{self, Left, Right};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::convert::{From, Into};
 #[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
 use std::process::{ExitCode, Termination};
 
@@ -141,6 +144,7 @@ pub mod docs {
         //!|:----------------------|:----------------------|:-------------------|:-------------|
         //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
         //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+        //!| `serde`               | Stable, Beta, Nightly |                    | Implements `serde::Serialize` and `serde::Deserialize` for `woe::Result`. |
         //!| `no_std`              | Stable, Beta, Nightly | None               | Makes the crate `no_std` compatible. _This conflicts with the `termination_trait` feature, so turning on `no_std` will automatically disable that feature._ Use the flag `--features no_std,nightly` to get a fully-featured and `no-std`-compatible API. |
         //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
         //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
@@ -284,11 +288,7 @@ impl<T, L, F> Try for Result<T, L, F> {
     /// ```
     #[inline]
     fn into_result(self) -> StdResult<StdResult<T, L>, F> {
-        match self {
-            Ok(t) => StdOk(StdOk(t)),
-            LocalErr(err) => StdOk(StdErr(err)),
-            FatalErr(err) => StdErr(err),
-        }
+        self.into()
     }
 
     /// Construct the `FatalErr` variant based on some error.
@@ -346,11 +346,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[inline]
     pub fn into_result(self) -> StdResult<StdResult<T, L>, F> {
-        match self {
-            Ok(t) => StdOk(StdOk(t)),
-            LocalErr(err) => StdOk(StdErr(err)),
-            FatalErr(err) => StdErr(err),
-        }
+        self.into()
     }
 
     /// Construct the `FatalErr` variant based on some error.
@@ -1502,5 +1498,63 @@ impl<R: Try> LoopState<R::Ok, R> {
             Continue(v) => Try::from_ok(v),
             Break(v) => v,
         }
+    }
+}
+
+impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
+    fn from(result: StdResult<StdResult<T, L>, F>) -> Result<T, L, F> {
+        match result {
+            StdOk(inner) => match inner {
+                StdOk(ok) => Ok(ok),
+                StdErr(err) => LocalErr(err),
+            },
+            StdErr(err) => FatalErr(err),
+        }
+    }
+}
+
+impl<T, L, F> Into<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
+    fn into(self) -> StdResult<StdResult<T, L>, F> {
+        match self {
+            Ok(ok) => StdOk(StdOk(ok)),
+            LocalErr(err) => StdOk(StdErr(err)),
+            FatalErr(err) => StdErr(err),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<T, L, F> Serialize for Result<T, L, F>
+where
+    T: Serialize,
+    L: Serialize,
+    F: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Convert `woe::Result` into `StdResult<StdResult<&T, &L>, &F>` and serialize that.
+        self.as_ref().into_result().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, T, L, F> Deserialize<'de> for Result<T, L, F>
+where
+    T: Deserialize<'de>,
+    L: Deserialize<'de>,
+    F: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // Deserialize a `std::result::Result`.
+        let result: StdResult<StdResult<T, L>, F> = StdResult::deserialize(deserializer)?;
+        // Convert to a `woe::Result`.
+        let result: Result<T, L, F> = result.into();
+        // Wrap it for the return.
+        StdOk(result)
     }
 }
