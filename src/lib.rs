@@ -123,6 +123,174 @@ pub mod docs {
         // TODO: Write the rest of this.
     }
 
+    pub mod methods {
+        //! An explanation of `woe::Result`'s methods.
+        //! 
+        //! `woe::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
+        //! easy to navigate. To help, this page explains them in groups of similar methods, and includes a Table
+        //! of Contents to make it easy to find again in the future.
+        //! 
+        //! # Table of Contents
+        //! 
+        //! 1. [See if the `Result` is a particular variant][is]
+        //! 2. [See if the `Result` contains a value][contains]
+        //! 3. [Get an `Option` if a variant is present][get]
+        //! 4. [Reference the contained value][as_ref]
+        //! 5. [Dereference the contained value][as_deref]
+        //! 6. [Map over the contained value][map]
+        //! 7. [Iterate over the contained value][iter]
+        //! 8. [Compose `Result`s][compose]
+        //! 9. [Unwrap the `Result`][unwrap]
+        //! 10. [Copy or clone the contained value][clone]
+        //! 11. [Transpose when holding an `Option`][transpose]
+        //! 12. [Convert to and from a `std::result::Result`][convert]
+        //! 13. [Use `woe::Result` with the question mark operator][try]
+        //! 14. [Use `woe::Result` as the return type of `main`][main]
+        //! 15. [Build a `woe::Result` from an iterator][from_iter]
+        //! 
+        //! [is]: #see-if-the-result-is-a-particular-variant
+        //! [contains]: #see-if-the-result-contains-a-value
+        //! [get]: #get-an-option-if-a-variant-is-present
+        //! [as_ref]: #reference-the-contained-value
+        //! [as_deref]: #dereference-the-contained-value
+        //! [map]: #map-over-the-contained-value
+        //! [iter]: #iterate-over-the-contained-value
+        //! [compose]: #compose-results
+        //! [unwrap]: #unwrap-the-result
+        //! [clone]: #copy-or-clone-the-contained-value
+        //! [transpose]: #transpose-when-holding-an-option
+        //! [convert]: #convert-to-and-from-a-stdresultresult
+        //! [try]: #use-woeresult-with-the-question-mark-operator
+        //! [main]: #use-woeresult-as-the-return-type-of-main
+        //! [from_iter]: #build-a-woeresult-from-an-iterator
+        //! 
+        //! # Methods
+        //! 
+        //! ## See if the `Result` is a particular variant
+        //! 
+        //! These methods, the "is" methods, return a `bool` based on what variant is present.
+        //! 
+        //! 1. [`is_ok`](../../enum.Result.html#method.is_ok)
+        //! 2. [`is_err`](../../enum.Result.html#method.is_err)
+        //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
+        //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
+        //! 
+        //! ---
+        //! 
+        //! ## See if the `Result` contains a value
+        //! 
+        //! These methods check if the `Result` contains a particular value.
+        //! 
+        //! 1. [`contains`](../../enum.Result.html#method.contains)
+        //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
+        //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
+        //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
+        //! 
+        //! ---
+        //! 
+        //! ## Get an `Option` if a variant is present
+        //! 
+        //! These methods try to get the contained value out, returning an `Option` in case it's
+        //! another variant.
+        //! 
+        //! 1. [`ok`](../../enum.Result.html#method.ok)
+        //! 2. [`err`](../../enum.Result.html#method.err)
+        //! 3. [`local_err`](../../enum.Result.html#method.local_err)
+        //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
+        //! 
+        //! ---
+        //! 
+        //! ## Reference the contained value
+        //! 
+        //! Gets a reference (immutable or mutable) to the contained value.
+        //! 
+        //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
+        //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
+        //! 
+        //! ---
+        //! 
+        //! ## Dereference the contained value
+        //! 
+        //! Dereferences the contained value if it implements `Deref`.
+        //! 
+        //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
+        //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
+        //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
+        //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
+        //! 
+        //! 
+        //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
+        //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
+        //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
+        //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
+        //! 
+        //! ---
+        //! 
+        //! ## Map over the contained value
+        //! 
+        //! Applies some function to the contained value.
+        //! 
+        //! 1. [`map`](../../enum.Result.html#method.map)
+        //! 2. [`map_or`](../../enum.Result.html#method.map_or)
+        //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
+        //! 
+        //! 
+        //! 1. [`map_err`](../../enum.Result.html#method.map_err)
+        //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
+        //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
+        //! 
+        //! 
+        //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
+        //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
+        //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
+        //! 
+        //! 
+        //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
+        //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
+        //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
+        //! 
+        //! ---
+        //! 
+        //! ## Iterate over the contained value
+        //! 
+        //! ---
+        //! 
+        //! ## Compose `Result`s
+        //! 
+        //! ---
+        //! 
+        //! ## Unwrap the `Result`
+        //! 
+        //! ---
+        //! 
+        //! ## Copy or clone the contained value
+        //! 
+        //! ---
+        //! 
+        //! ## Transpose when holding an `Option`
+        //! 
+        //! ---
+        //! 
+        //! ## Convert to and from a `std::result::Result`
+        //! 
+        //! ---
+        //! 
+        //! ## Use `woe::Result` with the question mark operator
+        //! 
+        //! ---
+        //! 
+        //! ## Use `woe::Result` as the return type of `main`
+        //! 
+        //! ---
+        //! 
+        //! ## Build a `woe::Result` from an iterator
+        //! 
+        //! 
+        //! <style>
+        //! hr { border: 0; background-color: transparent; height: 0; display: block; border-bottom: 1px solid transparent; margin: 3rem 0 0 0; }
+        //! </style>
+    }
+
     pub mod features {
         //! Features to configure based on stable vs. nightly, std vs. no_std, or a desire for no dependencies.
         //!
