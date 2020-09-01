@@ -1,7 +1,7 @@
 
-# `woe`
+# `woah`
 
-`woe` is a (currently nightly-only) Rust crate which provides the following type:
+`woah` is a (currently nightly-only) Rust crate which provides the following type:
 
 ```rust
 enum Result<T, L, F> {
@@ -13,10 +13,10 @@ enum Result<T, L, F> {
 
 This type differentiates between "local errors" which can be handled and "fatal errors" which can't, to
 enable the error handling pattern described by Tyler Neely (@spacejam) in the blog post ["Error Handling
-in a Correctness-Critical Rust Project"][post]. `woe::Result` is intended to be a more ergonomic
+in a Correctness-Critical Rust Project"][post]. `woah::Result` is intended to be a more ergonomic
 alternative to the `Result<Result<T, LocalError>, FatalError>` type proposed in the post.
 
-The important thing to note is that using the question mark operator on `woe::Result` causes
+The important thing to note is that using the question mark operator on `woah::Result` causes
 any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
 the local code to handle any local errors without propagating them.
 
@@ -24,7 +24,7 @@ the local code to handle any local errors without propagating them.
 
 ```rust
 use std::ops::Try;
-use woe::Result::{self, Ok, LocalErr, FatalErr};
+use woah::Result::{self, Ok, LocalErr, FatalErr};
 use std::result::Result as StdResult;
 
 fn main() {

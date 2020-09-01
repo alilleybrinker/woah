@@ -1,5 +1,5 @@
 [package]
-name = "woe"
+name = "woah"
 version = "0.1.8"
 authors = ["Andrew Lilley Brinker <andrewabrinker@gmail.com>"]
 description = """
@@ -18,11 +18,14 @@ either = { version = "1.5", default-features = false, optional = true }
 serde = { version = "1.0", optional = true }
 
 [features]
-default = ["either_methods"]
+default = ["either_methods", "std"]
 
 # This uses the `either` crate to enable methods which work on
-# `Either<LocalErr, FatalErr`.
+# `Either<LocalErr, FatalErr>`.
 either_methods = ["either/use_std"]
+
+# Either is used in std mode.
+std = ["either_methods"]
 
 # Enable all nightly-only features of the crate.
 nightly = [
@@ -57,12 +60,6 @@ sum_trait = ["try_trait"]
 
 # Enable the `FromIterator` trait, whose implementation requires the `Try` trait.
 from_iterator_trait = ["try_trait"]
-
-# Make the crate `no_std`-compatible, meaning it can be used in contexts which
-# don't have the standard library. Note that this deactivates the `termination_trait`
-# feature, which relies on `std::process` (not part of `core`, and thus not supported
-# in a `no_std` context).
-no_std = ["either"]
 
 [package.metadata.docs.rs]
 # Turn on all features on docs.rs (documentation explains which are nightly-only)

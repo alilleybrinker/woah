@@ -1,4 +1,4 @@
-//!`woe` is a Rust crate which provides the following type:
+//!`woah` is a Rust crate which provides the following type:
 //!
 //! ```text
 //! enum Result<T, L, F> {
@@ -10,10 +10,10 @@
 //!
 //! This type differentiates between "local errors" which can be handled and "fatal errors" which can't, to
 //! enable the error handling pattern described by Tyler Neely (@spacejam) in the blog post ["Error Handling
-//! in a Correctness-Critical Rust Project"][post]. `woe::Result` is intended to be a more ergonomic
+//! in a Correctness-Critical Rust Project"][post]. `woah::Result` is intended to be a more ergonomic
 //! alternative to the `Result<Result<T, LocalError>, FatalError>` type proposed in the post.
 //!
-//! The important thing to note is that using the question mark operator on `woe::Result` causes
+//! The important thing to note is that using the question mark operator on `woah::Result` causes
 //! any `FatalError` to propagate up, while providing `Result<T, LocalError>` otherwise, to enable
 //! the local code to handle local errors without propagating them.
 //!
@@ -22,8 +22,8 @@
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
 //! [docs]: docs/index.html "Link to the docs module"
 
-#![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woe/issues/")]
-#![cfg_attr(feature = "no_std", no_std)]
+#![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woah/issues/")]
+#![cfg_attr(not(feature = "std"), no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
 #![cfg_attr(feature = "try_trait", feature(try_trait))]
 #![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait)))))]
@@ -71,16 +71,16 @@ use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::{From, Into};
-#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
+#[cfg(all(feature = "termination_trait", feature = "std"))]
 use std::process::{ExitCode, Termination};
 
 pub mod prelude {
-    //! A collection of re-exports to make `woe::Result` the standard result type.
+    //! A collection of re-exports to make `woah::Result` the standard result type.
     //!
     //! This keeps `std::result::Result` available as `StdResult`, and imports additional types and traits
-    //! to make `woe::Result` fully-featured, based on feature flags.
+    //! to make `woah::Result` fully-featured, based on feature flags.
 
-    // Replace `std::result::Result` with `woe::Result`.
+    // Replace `std::result::Result` with `woah::Result`.
     pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Ok};
     pub use std::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 
@@ -89,7 +89,7 @@ pub mod prelude {
     pub use std::ops::Try;
 
     // Import the Termination trait.
-    #[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
+    #[cfg(all(feature = "termination_trait", feature = "std"))]
     pub use std::process::Termination;
 
     // Import the FromIterator trait.
@@ -118,20 +118,20 @@ pub mod docs {
     //! submodules helps keep them from getting too unwieldy, so people can still navigate the API itself with ease.
 
     pub mod concept {
-        //! Explanation of why `woe` exists.
+        //! Explanation of why `woah` exists.
 
         // TODO: Write the rest of this.
     }
 
     pub mod methods {
-        //! An explanation of `woe::Result`'s methods.
-        //! 
-        //! `woe::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
+        //! An explanation of `woah::Result`'s methods.
+        //!
+        //! `woah::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
         //! easy to navigate. To help, this page explains them in groups of similar methods, and includes a Table
         //! of Contents to make it easy to find again in the future.
-        //! 
+        //!
         //! # Table of Contents
-        //! 
+        //!
         //! 1. [See if the `Result` is a particular variant][is]
         //! 2. [See if the `Result` contains a value][contains]
         //! 3. [Get an `Option` if a variant is present][get]
@@ -144,10 +144,10 @@ pub mod docs {
         //! 10. [Copy or clone the contained value][clone]
         //! 11. [Transpose when holding an `Option`][transpose]
         //! 12. [Convert to and from a `std::result::Result`][convert]
-        //! 13. [Use `woe::Result` with the question mark operator][try]
-        //! 14. [Use `woe::Result` as the return type of `main`][main]
-        //! 15. [Build a `woe::Result` from an iterator][from_iter]
-        //! 
+        //! 13. [Use `woah::Result` with the question mark operator][try]
+        //! 14. [Use `woah::Result` as the return type of `main`][main]
+        //! 15. [Build a `woah::Result` from an iterator][from_iter]
+        //!
         //! [is]: #see-if-the-result-is-a-particular-variant
         //! [contains]: #see-if-the-result-contains-a-value
         //! [get]: #get-an-option-if-a-variant-is-present
@@ -160,132 +160,132 @@ pub mod docs {
         //! [clone]: #copy-or-clone-the-contained-value
         //! [transpose]: #transpose-when-holding-an-option
         //! [convert]: #convert-to-and-from-a-stdresultresult
-        //! [try]: #use-woeresult-with-the-question-mark-operator
-        //! [main]: #use-woeresult-as-the-return-type-of-main
-        //! [from_iter]: #build-a-woeresult-from-an-iterator
-        //! 
+        //! [try]: #use-woahresult-with-the-question-mark-operator
+        //! [main]: #use-woahresult-as-the-return-type-of-main
+        //! [from_iter]: #build-a-woahresult-from-an-iterator
+        //!
         //! # Methods
-        //! 
+        //!
         //! ## See if the `Result` is a particular variant
-        //! 
+        //!
         //! These methods, the "is" methods, return a `bool` based on what variant is present.
-        //! 
+        //!
         //! 1. [`is_ok`](../../enum.Result.html#method.is_ok)
         //! 2. [`is_err`](../../enum.Result.html#method.is_err)
         //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
         //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## See if the `Result` contains a value
-        //! 
+        //!
         //! These methods check if the `Result` contains a particular value.
-        //! 
+        //!
         //! 1. [`contains`](../../enum.Result.html#method.contains)
         //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
         //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
         //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Get an `Option` if a variant is present
-        //! 
+        //!
         //! These methods try to get the contained value out, returning an `Option` in case it's
         //! another variant.
-        //! 
+        //!
         //! 1. [`ok`](../../enum.Result.html#method.ok)
         //! 2. [`err`](../../enum.Result.html#method.err)
         //! 3. [`local_err`](../../enum.Result.html#method.local_err)
         //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Reference the contained value
-        //! 
+        //!
         //! Gets a reference (immutable or mutable) to the contained value.
-        //! 
+        //!
         //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
         //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Dereference the contained value
-        //! 
+        //!
         //! Dereferences the contained value if it implements `Deref`.
-        //! 
+        //!
         //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
         //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
         //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
         //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
-        //! 
-        //! 
+        //!
+        //!
         //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
         //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
         //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
         //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Map over the contained value
-        //! 
+        //!
         //! Applies some function to the contained value.
-        //! 
+        //!
         //! 1. [`map`](../../enum.Result.html#method.map)
         //! 2. [`map_or`](../../enum.Result.html#method.map_or)
         //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
-        //! 
-        //! 
+        //!
+        //!
         //! 1. [`map_err`](../../enum.Result.html#method.map_err)
         //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
         //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
-        //! 
-        //! 
+        //!
+        //!
         //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
         //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
         //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
-        //! 
-        //! 
+        //!
+        //!
         //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
         //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
         //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Iterate over the contained value
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Compose `Result`s
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Unwrap the `Result`
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Copy or clone the contained value
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Transpose when holding an `Option`
-        //! 
+        //!
         //! ---
-        //! 
+        //!
         //! ## Convert to and from a `std::result::Result`
-        //! 
+        //!
         //! ---
-        //! 
-        //! ## Use `woe::Result` with the question mark operator
-        //! 
+        //!
+        //! ## Use `woah::Result` with the question mark operator
+        //!
         //! ---
-        //! 
-        //! ## Use `woe::Result` as the return type of `main`
-        //! 
+        //!
+        //! ## Use `woah::Result` as the return type of `main`
+        //!
         //! ---
-        //! 
-        //! ## Build a `woe::Result` from an iterator
-        //! 
-        //! 
+        //!
+        //! ## Build a `woah::Result` from an iterator
+        //!
+        //!
         //! <style>
         //! hr { border: 0; background-color: transparent; height: 0; display: block; border-bottom: 1px solid transparent; margin: 3rem 0 0 0; }
         //! </style>
@@ -296,15 +296,15 @@ pub mod docs {
         //!
         //! # Features
         //!
-        //! `woe` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
-        //! to get the full power of the `woe::Result` type, including:
+        //! `woah` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
+        //! to get the full power of the `woah::Result` type, including:
         //!
         //! * Being able to use it with the question mark operator,
         //! * Being able to make it the return type of `fn main`,
         //! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
-        //!   from `Vec<woe::Result<T, L, F>` into `woe::Result<Vec<T>, L, F>` via the `collect` method).
+        //!   from `Vec<woah::Result<T, L, F>` into `woah::Result<Vec<T>, L, F>` via the `collect` method).
         //!
-        //! The following table is the full list of features. If you want to use `woe` without any dependencies,
+        //! The following table is the full list of features. If you want to use `woah` without any dependencies,
         //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
         //! methods.
         //!
@@ -312,20 +312,20 @@ pub mod docs {
         //!|:----------------------|:----------------------|:-------------------|:-------------|
         //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
         //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
-        //!| `serde`               | Stable, Beta, Nightly |                    | Implements `serde::Serialize` and `serde::Deserialize` for `woe::Result`. |
-        //!| `no_std`              | Stable, Beta, Nightly | None               | Makes the crate `no_std` compatible. _This conflicts with the `termination_trait` feature, so turning on `no_std` will automatically disable that feature._ Use the flag `--features no_std,nightly` to get a fully-featured and `no-std`-compatible API. |
+        //!| `serde`               | Stable, Beta, Nightly |                    | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
+        //!| `std`                 | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library conflicts with the `termination_trait` feature, so turning off `std` will automatically disable that feature._ |
         //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
-        //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woe::Result` can be used with the question mark operator. |
-        //!| `trusted_len`         | Nightly               | None               | Enables `woe::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
+        //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woah::Result` can be used with the question mark operator. |
+        //!| `trusted_len`         | Nightly               | None               | Enables `woah::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
         //!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
-        //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woe::Result` to be used as the return type for the `main` function. |
+        //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woah::Result` to be used as the return type for the `main` function. _This requires the `std` feature to be turned on as well (which it is by default)._ |
         //!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
         //!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
-        //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woe::Result<T, L, F>>` into `woe::Result<Vec<T>, L, F>` |
+        //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woah::Result<T, L, F>>` into `woah::Result<Vec<T>, L, F>` |
     }
 
     pub mod examples {
-        //! Examples of using `woe` on both stable and nightly.
+        //! Examples of using `woah` on both stable and nightly.
         //!
         //! # Table of Contents
         //!
@@ -335,7 +335,7 @@ pub mod docs {
         //! # Example on stable
         //!
         //! ```
-        //! use woe::prelude::*;
+        //! use woah::prelude::*;
         //! use std::cmp::Ordering;
         //!
         //! match get_number() {
@@ -376,7 +376,7 @@ pub mod docs {
         //! This uses `--features nightly` to enable nightly-only features.
         //!
         //! ```
-        //! use woe::prelude::*;
+        //! use woah::prelude::*;
         //! use std::cmp::Ordering;
         //!
         //! # #[cfg(feature = "nightly")]
@@ -426,7 +426,7 @@ pub mod docs {
 
 /// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 ///
-/// See the [`woe`](index.html) top-level documentation for details.
+/// See the [`woah`](index.html) top-level documentation for details.
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 #[must_use = "this `Result` may be a `LocalErr`, which should be handled, or a `FatalErr`, which should be propagated"]
 pub enum Result<T, L, F> {
@@ -443,13 +443,13 @@ impl<T, L, F> Try for Result<T, L, F> {
     type Ok = StdResult<T, L>;
     type Error = F;
 
-    /// Convert `woe::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
+    /// Convert `woah::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
     /// in `?` behavior.
     ///
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
     /// assert_eq!(result, StdOk(StdErr("a local error")));
@@ -464,7 +464,7 @@ impl<T, L, F> Try for Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
@@ -480,7 +480,7 @@ impl<T, L, F> Try for Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// // Construct a `LocalErr` variant.
     /// let local_err: Result<i64, &str, &str> = Result::from_ok(StdErr("a local error"));
@@ -501,13 +501,13 @@ impl<T, L, F> Try for Result<T, L, F> {
 
 #[cfg(not(feature = "try_trait"))]
 impl<T, L, F> Result<T, L, F> {
-    /// Convert `woe::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
+    /// Convert `woah::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
     /// in `?` behavior.
     ///
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
     /// assert_eq!(result, StdOk(StdErr("a local error")));
@@ -522,7 +522,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
@@ -538,7 +538,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
     /// assert_eq!(result, StdOk(StdErr("a local error")));
@@ -560,7 +560,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_ok(), true);
@@ -588,7 +588,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_err(), false);
@@ -612,7 +612,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_local_err(), false);
@@ -639,7 +639,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Example
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let x: Result<i32, &str, &str> = Ok(-3);
     /// assert_eq!(x.is_fatal_err(), false);
@@ -666,7 +666,7 @@ impl<T, L, F> Result<T, L, F> {
     /// # Examples
     ///
     /// ```
-    /// use woe::prelude::*;
+    /// use woah::prelude::*;
     ///
     /// let x: Result<u32, &str, &str> = Ok(2);
     /// assert_eq!(x.contains(&2), true);
@@ -1409,7 +1409,7 @@ where
     }
 }
 
-#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
+#[cfg(all(feature = "termination_trait", feature = "std"))]
 impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
@@ -1425,7 +1425,7 @@ where
     }
 }
 
-#[cfg(all(feature = "termination_trait", not(feature = "no_std")))]
+#[cfg(all(feature = "termination_trait", feature = "std"))]
 impl<L, F> Termination for Result<!, L, F>
 where
     L: Debug,
@@ -1447,7 +1447,7 @@ where
     }
 }
 
-/// An iterator over the value in an `Ok` variant of a `woe::Result`.
+/// An iterator over the value in an `Ok` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct IntoIter<T> {
     inner: Option<T>,
@@ -1462,7 +1462,7 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
-/// An iterator over a reference to the `Ok` variant of a `woe::Result`.
+/// An iterator over a reference to the `Ok` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct Iter<'a, T: 'a> {
     inner: Option<&'a T>,
@@ -1495,7 +1495,7 @@ impl<'a, T> FusedIterator for Iter<'a, T> {}
 #[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
-/// An iterator over a mutable reference to the `Ok` variant of a `woe::Result`.
+/// An iterator over a mutable reference to the `Ok` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct IterMut<'a, T: 'a> {
     inner: Option<&'a mut T>,
@@ -1702,7 +1702,7 @@ where
     where
         S: Serializer,
     {
-        // Convert `woe::Result` into `StdResult<StdResult<&T, &L>, &F>` and serialize that.
+        // Convert `woah::Result` into `StdResult<StdResult<&T, &L>, &F>` and serialize that.
         self.as_ref().into_result().serialize(serializer)
     }
 }
@@ -1720,7 +1720,7 @@ where
     {
         // Deserialize a `std::result::Result`.
         let result: StdResult<StdResult<T, L>, F> = StdResult::deserialize(deserializer)?;
-        // Convert to a `woe::Result`.
+        // Convert to a `woah::Result`.
         let result: Result<T, L, F> = result.into();
         // Wrap it for the return.
         StdOk(result)
