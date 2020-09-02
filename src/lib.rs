@@ -117,12 +117,6 @@ pub mod docs {
     //! Putting the docs in Rustdoc means they can be run as documentation tests. Breaking them up into modules and
     //! submodules helps keep them from getting too unwieldy, so people can still navigate the API itself with ease.
 
-    pub mod concept {
-        //! Explanation of why `woah` exists.
-
-        // TODO: Write the rest of this.
-    }
-
     pub mod methods {
         //! An explanation of `woah::Result`'s methods.
         //!
@@ -218,6 +212,7 @@ pub mod docs {
         //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
         //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
         //!
+        //! Derferences the contained value mutably if it implements `DerefMut`.
         //!
         //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
         //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
@@ -234,16 +229,19 @@ pub mod docs {
         //! 2. [`map_or`](../../enum.Result.html#method.map_or)
         //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
         //!
+        //! Applies some function to the contained value, if it's a local or fatal error.
         //!
         //! 1. [`map_err`](../../enum.Result.html#method.map_err)
         //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
         //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
         //!
+        //! Applies some function to the contained value, if it's a local error.
         //!
         //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
         //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
         //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
         //!
+        //! Applies some function to the contained value, if it's a fatal error.
         //!
         //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
         //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
@@ -253,38 +251,80 @@ pub mod docs {
         //!
         //! ## Iterate over the contained value
         //!
+        //! 1. [`iter`](../../enum.Result.html#method.iter)
+        //! 2. [`iter_mut`](../../enum.Result.html#method.iter_mut)
+        //! 3. [`into_iter`](../../enum.Result.html#impl-IntoIterator-2) (for `woah::Result`)
+        //! 4. [`into_iter`](../../enum.Result.html#impl-IntoIterator-1) (for `&woah::Result`)
+        //! 5. [`into_iter`](../../enum.Result.html#impl-IntoIterator) (for `&mut woah::Result`)
+        //!
         //! ---
         //!
         //! ## Compose `Result`s
+        //!
+        //! 1. [`and`](../../enum.Result.html#method.and)
+        //! 2. [`and_then`](../../enum.Result.html#method.and_then)
+        //! 3. [`or`](../../enum.Result.html#method.or)
+        //! 4. [`or_else`](../../enum.Result.html#method.or_else)
+        //! 5. [`or_else_fatal`](../../enum.Result.html#method.or_else_fatal)
+        //! 6. [`or_else_local`](../../enum.Result.html#method.or_else_local)
+        //! 7. [`or_fatal`](../../enum.Result.html#method.or_fatal)
+        //! 8. [`or_local`](../../enum.Result.html#method.or_local)
         //!
         //! ---
         //!
         //! ## Unwrap the `Result`
         //!
+        //! 1. [`unwrap`](../../enum.Result.html#method.unwrap)
+        //! 2. [`unwrap_err`](../../enum.Result.html#method.unwrap_err)
+        //! 3. [`unwrap_fatal_err`](../../enum.Result.html#method.unwrap_fatal_err)
+        //! 4. [`unwrap_local_err`](../../enum.Result.html#method.unwrap_local_err)
+        //! 5. [`unwrap_or`](../../enum.Result.html#method.unwrap_or)
+        //! 6. [`unwrap_or_default`](../../enum.Result.html#method.unwrap_or_default)
+        //! 7. [`unwrap_or_else`](../../enum.Result.html#method.unwrap_or_else)
+        //! 8. [`expect`](../../enum.Result.html#method.expect)
+        //! 9. [`expect_err`](../../enum.Result.html#method.expect_err)
+        //! 10. [`expect_fatal_err`](../../enum.Result.html#method.expect_fatal_err)
+        //! 11. [`expect_local_err`](../../enum.Result.html#method.expect_local_err)
+        //!
         //! ---
         //!
         //! ## Copy or clone the contained value
+        //!
+        //! 1. [`cloned`](../../enum.Result.html#method.cloned) (for `&woah::Result`)
+        //! 2. [`cloned`](../../enum.Result.html#method.cloned-1) (for `&mut woah::Result`)
+        //! 1. [`copied`](../../enum.Result.html#method.copied) (for `&woah::Result`)
+        //! 2. [`copied`](../../enum.Result.html#method.copied-1) (for `&mut woah::Result`)
         //!
         //! ---
         //!
         //! ## Transpose when holding an `Option`
         //!
+        //! 1. [`transpose`](../../enum.Result.html#method.transpose)
+        //!
         //! ---
         //!
         //! ## Convert to and from a `std::result::Result`
+        //!
+        //! 1. [`into_result`](../../enum.Result.html#method.into_result)
+        //! 1. [`into_result_default`](../../enum.Result.html#method.into_result_default)
         //!
         //! ---
         //!
         //! ## Use `woah::Result` with the question mark operator
         //!
+        //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with `nightly` feature or `try_trait` feature)
+        //!
         //! ---
         //!
         //! ## Use `woah::Result` as the return type of `main`
+        //!
+        //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (nightly-only, with `nightly` feature, or `termination_trait` and `std` features)
         //!
         //! ---
         //!
         //! ## Build a `woah::Result` from an iterator
         //!
+        //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with `nightly` feature, or `from_iterator_trait` feature)
         //!
         //! <style>
         //! hr { border: 0; background-color: transparent; height: 0; display: block; border-bottom: 1px solid transparent; margin: 3rem 0 0 0; }
