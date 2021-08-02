@@ -634,11 +634,8 @@ impl<T, L, F> Result<T, L, F> {
         U: PartialEq<L>,
         Y: PartialEq<F>,
     {
-        match (self, e) {
-            (LocalErr(err), Left(e)) if *e == *err => true,
-            (FatalErr(err), Right(e)) if *e == *err => true,
-            _ => false,
-        }
+        matches!((self, e), (LocalErr(err), Left(e)) if *e == *err)
+            || matches!((self, e), (FatalErr(err), Right(e)) if *e == *err)
     }
 
     #[must_use]
