@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 edition = "2018"
 categories = ["rust-patterns"]
 keywords = ["result", "error-handling"]
-repository = "https://github.com/alilleybrinker/woe/"
+repository = "https://github.com/alilleybrinker/woah/"
 readme = "README.md"
 
 [dependencies]
