@@ -25,8 +25,12 @@
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woah/issues/")]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
-#![cfg_attr(feature = "try_trait", feature(try_trait))]
-#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait)))))]
+#![cfg_attr(feature = "try_trait", feature(try_trait_v2))]
+#![cfg_attr(feature = "try_trait", feature(try_blocks))]
+#![cfg_attr(feature = "try_trait", feature(control_flow_enum))]
+#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait_v2)))))]
+#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_blocks)))))]
+#![cfg_attr(feature = "try_trait", doc(test(attr(feature(control_flow_enum)))))]
 // Turn on the `TrustedLen` trait.
 #![cfg_attr(feature = "trusted_len", feature(trusted_len))]
 // Enable use of the never type (`!`) in generic code.
@@ -45,12 +49,6 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait"
-))]
-use crate::LoopState::{Break, Continue};
 use crate::Result::{FatalErr, LocalErr, Ok};
 use core::fmt::Debug;
 #[cfg(feature = "from_iterator_trait")]
@@ -62,9 +60,16 @@ use core::iter::Sum;
 #[cfg(feature = "trusted_len")]
 use core::iter::TrustedLen;
 use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
-#[cfg(feature = "try_trait")]
-use core::ops::Try;
+#[cfg(any(
+    feature = "from_iterator_trait",
+    feature = "product_trait",
+    feature = "sum_trait",
+    feature = "try_trait"
+))]
+use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
+#[cfg(feature = "try_trait")]
+use core::ops::{FromResidual, Try};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 #[cfg(feature = "either_methods")]
 use either::Either::{self, Left, Right};
@@ -86,7 +91,15 @@ pub mod prelude {
 
     // Import the Try trait.
     #[cfg(feature = "try_trait")]
-    pub use std::ops::Try;
+    pub use std::ops::{Try, FromResidual};
+
+    #[cfg(any(
+        feature = "from_iterator_trait",
+        feature = "product_trait",
+        feature = "sum_trait",
+        feature = "try_trait"
+    ))]
+    pub use core::ops::ControlFlow;
 
     // Import the Termination trait.
     #[cfg(all(feature = "termination_trait", feature = "std"))]
@@ -112,356 +125,293 @@ pub mod prelude {
 pub mod docs {
     //! Documentation, including crate features and examples.
     //!
-    //! # Why are the docs like this?
+    //! ## Why are the docs like this?
     //!
-    //! Putting the docs in Rustdoc means they can be run as documentation tests. Breaking them up into modules and
-    //! submodules helps keep them from getting too unwieldy, so people can still navigate the API itself with ease.
-
-    pub mod methods {
-        //! An explanation of `woah::Result`'s methods.
-        //!
-        //! `woah::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
-        //! easy to navigate. To help, this page explains them in groups of similar methods, and includes a Table
-        //! of Contents to make it easy to find again in the future.
-        //!
-        //! # Table of Contents
-        //!
-        //! 1. [See if the `Result` is a particular variant][is]
-        //! 2. [See if the `Result` contains a value][contains]
-        //! 3. [Get an `Option` if a variant is present][get]
-        //! 4. [Reference the contained value][as_ref]
-        //! 5. [Dereference the contained value][as_deref]
-        //! 6. [Map over the contained value][map]
-        //! 7. [Iterate over the contained value][iter]
-        //! 8. [Compose `Result`s][compose]
-        //! 9. [Unwrap the `Result`][unwrap]
-        //! 10. [Copy or clone the contained value][clone]
-        //! 11. [Transpose when holding an `Option`][transpose]
-        //! 12. [Convert to and from a `std::result::Result`][convert]
-        //! 13. [Use `woah::Result` with the question mark operator][try]
-        //! 14. [Use `woah::Result` as the return type of `main`][main]
-        //! 15. [Build a `woah::Result` from an iterator][from_iter]
-        //!
-        //! [is]: #see-if-the-result-is-a-particular-variant
-        //! [contains]: #see-if-the-result-contains-a-value
-        //! [get]: #get-an-option-if-a-variant-is-present
-        //! [as_ref]: #reference-the-contained-value
-        //! [as_deref]: #dereference-the-contained-value
-        //! [map]: #map-over-the-contained-value
-        //! [iter]: #iterate-over-the-contained-value
-        //! [compose]: #compose-results
-        //! [unwrap]: #unwrap-the-result
-        //! [clone]: #copy-or-clone-the-contained-value
-        //! [transpose]: #transpose-when-holding-an-option
-        //! [convert]: #convert-to-and-from-a-stdresultresult
-        //! [try]: #use-woahresult-with-the-question-mark-operator
-        //! [main]: #use-woahresult-as-the-return-type-of-main
-        //! [from_iter]: #build-a-woahresult-from-an-iterator
-        //!
-        //! # Methods
-        //!
-        //! ## See if the `Result` is a particular variant
-        //!
-        //! These methods, the "is" methods, return a `bool` based on what variant is present.
-        //!
-        //! 1. [`is_ok`](../../enum.Result.html#method.is_ok)
-        //! 2. [`is_err`](../../enum.Result.html#method.is_err)
-        //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
-        //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
-        //!
-        //! ---
-        //!
-        //! ## See if the `Result` contains a value
-        //!
-        //! These methods check if the `Result` contains a particular value.
-        //!
-        //! 1. [`contains`](../../enum.Result.html#method.contains)
-        //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
-        //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
-        //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
-        //!
-        //! ---
-        //!
-        //! ## Get an `Option` if a variant is present
-        //!
-        //! These methods try to get the contained value out, returning an `Option` in case it's
-        //! another variant.
-        //!
-        //! 1. [`ok`](../../enum.Result.html#method.ok)
-        //! 2. [`err`](../../enum.Result.html#method.err)
-        //! 3. [`local_err`](../../enum.Result.html#method.local_err)
-        //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
-        //!
-        //! ---
-        //!
-        //! ## Reference the contained value
-        //!
-        //! Gets a reference (immutable or mutable) to the contained value.
-        //!
-        //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
-        //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
-        //!
-        //! ---
-        //!
-        //! ## Dereference the contained value
-        //!
-        //! Dereferences the contained value if it implements `Deref`.
-        //!
-        //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
-        //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
-        //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
-        //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
-        //!
-        //! Derferences the contained value mutably if it implements `DerefMut`.
-        //!
-        //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
-        //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
-        //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
-        //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
-        //!
-        //! ---
-        //!
-        //! ## Map over the contained value
-        //!
-        //! Applies some function to the contained value.
-        //!
-        //! 1. [`map`](../../enum.Result.html#method.map)
-        //! 2. [`map_or`](../../enum.Result.html#method.map_or)
-        //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
-        //!
-        //! Applies some function to the contained value, if it's a local or fatal error.
-        //!
-        //! 1. [`map_err`](../../enum.Result.html#method.map_err)
-        //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
-        //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
-        //!
-        //! Applies some function to the contained value, if it's a local error.
-        //!
-        //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
-        //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
-        //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
-        //!
-        //! Applies some function to the contained value, if it's a fatal error.
-        //!
-        //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
-        //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
-        //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
-        //!
-        //! ---
-        //!
-        //! ## Iterate over the contained value
-        //!
-        //! 1. [`iter`](../../enum.Result.html#method.iter)
-        //! 2. [`iter_mut`](../../enum.Result.html#method.iter_mut)
-        //! 3. [`into_iter`](../../enum.Result.html#impl-IntoIterator-2) (for `woah::Result`)
-        //! 4. [`into_iter`](../../enum.Result.html#impl-IntoIterator-1) (for `&woah::Result`)
-        //! 5. [`into_iter`](../../enum.Result.html#impl-IntoIterator) (for `&mut woah::Result`)
-        //!
-        //! ---
-        //!
-        //! ## Compose `Result`s
-        //!
-        //! 1. [`and`](../../enum.Result.html#method.and)
-        //! 2. [`and_then`](../../enum.Result.html#method.and_then)
-        //! 3. [`or`](../../enum.Result.html#method.or)
-        //! 4. [`or_else`](../../enum.Result.html#method.or_else)
-        //! 5. [`or_else_fatal`](../../enum.Result.html#method.or_else_fatal)
-        //! 6. [`or_else_local`](../../enum.Result.html#method.or_else_local)
-        //! 7. [`or_fatal`](../../enum.Result.html#method.or_fatal)
-        //! 8. [`or_local`](../../enum.Result.html#method.or_local)
-        //!
-        //! ---
-        //!
-        //! ## Unwrap the `Result`
-        //!
-        //! 1. [`unwrap`](../../enum.Result.html#method.unwrap)
-        //! 2. [`unwrap_err`](../../enum.Result.html#method.unwrap_err)
-        //! 3. [`unwrap_fatal_err`](../../enum.Result.html#method.unwrap_fatal_err)
-        //! 4. [`unwrap_local_err`](../../enum.Result.html#method.unwrap_local_err)
-        //! 5. [`unwrap_or`](../../enum.Result.html#method.unwrap_or)
-        //! 6. [`unwrap_or_default`](../../enum.Result.html#method.unwrap_or_default)
-        //! 7. [`unwrap_or_else`](../../enum.Result.html#method.unwrap_or_else)
-        //! 8. [`expect`](../../enum.Result.html#method.expect)
-        //! 9. [`expect_err`](../../enum.Result.html#method.expect_err)
-        //! 10. [`expect_fatal_err`](../../enum.Result.html#method.expect_fatal_err)
-        //! 11. [`expect_local_err`](../../enum.Result.html#method.expect_local_err)
-        //!
-        //! ---
-        //!
-        //! ## Copy or clone the contained value
-        //!
-        //! 1. [`cloned`](../../enum.Result.html#method.cloned) (for `&woah::Result`)
-        //! 2. [`cloned`](../../enum.Result.html#method.cloned-1) (for `&mut woah::Result`)
-        //! 1. [`copied`](../../enum.Result.html#method.copied) (for `&woah::Result`)
-        //! 2. [`copied`](../../enum.Result.html#method.copied-1) (for `&mut woah::Result`)
-        //!
-        //! ---
-        //!
-        //! ## Transpose when holding an `Option`
-        //!
-        //! 1. [`transpose`](../../enum.Result.html#method.transpose)
-        //!
-        //! ---
-        //!
-        //! ## Convert to and from a `std::result::Result`
-        //!
-        //! 1. [`into_result`](../../enum.Result.html#method.into_result)
-        //! 1. [`into_result_default`](../../enum.Result.html#method.into_result_default)
-        //!
-        //! ---
-        //!
-        //! ## Use `woah::Result` with the question mark operator
-        //!
-        //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with `nightly` feature or `try_trait` feature)
-        //!
-        //! ---
-        //!
-        //! ## Use `woah::Result` as the return type of `main`
-        //!
-        //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (nightly-only, with `nightly` feature, or `termination_trait` and `std` features)
-        //!
-        //! ---
-        //!
-        //! ## Build a `woah::Result` from an iterator
-        //!
-        //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with `nightly` feature, or `from_iterator_trait` feature)
-        //!
-        //! <style>
-        //! hr { border: 0; background-color: transparent; height: 0; display: block; border-bottom: 1px solid transparent; margin: 3rem 0 0 0; }
-        //! </style>
-    }
-
-    pub mod features {
-        //! Features to configure based on stable vs. nightly, std vs. no_std, or a desire for no dependencies.
-        //!
-        //! # Features
-        //!
-        //! `woah` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
-        //! to get the full power of the `woah::Result` type, including:
-        //!
-        //! * Being able to use it with the question mark operator,
-        //! * Being able to make it the return type of `fn main`,
-        //! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
-        //!   from `Vec<woah::Result<T, L, F>` into `woah::Result<Vec<T>, L, F>` via the `collect` method).
-        //!
-        //! The following table is the full list of features. If you want to use `woah` without any dependencies,
-        //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
-        //! methods.
-        //!
-        //!| Feature Name          | Channels              | Depends On         | What It Does |
-        //!|:----------------------|:----------------------|:-------------------|:-------------|
-        //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
-        //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
-        //!| `serde`               | Stable, Beta, Nightly |                    | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
-        //!| `std`                 | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library conflicts with the `termination_trait` feature, so turning off `std` will automatically disable that feature._ |
-        //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
-        //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woah::Result` can be used with the question mark operator. |
-        //!| `trusted_len`         | Nightly               | None               | Enables `woah::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
-        //!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
-        //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woah::Result` to be used as the return type for the `main` function. _This requires the `std` feature to be turned on as well (which it is by default)._ |
-        //!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
-        //!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
-        //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woah::Result<T, L, F>>` into `woah::Result<Vec<T>, L, F>` |
-    }
-
-    pub mod examples {
-        //! Examples of using `woah` on both stable and nightly.
-        //!
-        //! # Table of Contents
-        //!
-        //! 1. [Example on stable](#example-on-stable)
-        //! 2. [Example on nightly](#example-on-nightly)
-        //!
-        //! # Example on stable
-        //!
-        //! ```
-        //! use woah::prelude::*;
-        //! use std::cmp::Ordering;
-        //!
-        //! match get_number() {
-        //!     StdOk(num) => println!("Got a number: {}", num),
-        //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
-        //! }
-        //!
-        //! fn get_number() -> StdResult<i64, FatalError> {
-        //!     // propagate any fatal error
-        //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 5)?;
-        //!
-        //!     // handle any local error
-        //!     let num = result.unwrap_or_else(|local_err| {
-        //!         println!("Local error: {:?}", local_err);
-        //!         i64::default()
-        //!     });
-        //!
-        //!     StdOk(num)
-        //! }
-        //!
-        //! fn compare_numbers(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
-        //!     match x.cmp(&y) {
-        //!         Ordering::Greater => Ok(x),
-        //!         Ordering::Equal => LocalErr(LocalError::SomeError),
-        //!         Ordering::Less => FatalErr(FatalError::CatastrophicError),
-        //!     }.into_result()
-        //! }
-        //!
-        //! #[derive(Debug)]
-        //! enum LocalError { SomeError, AnotherError }
-        //!
-        //! #[derive(Debug)]
-        //! enum FatalError { BigBadError, CatastrophicError }
-        //! ```
-        //!
-        //! # Example on nightly
-        //!
-        //! This uses `--features nightly` to enable nightly-only features.
-        //!
-        //! ```
-        //! use woah::prelude::*;
-        //! use std::cmp::Ordering;
-        //!
-        //! # #[cfg(feature = "nightly")]
-        //! # fn main() {
-        //! match get_number() {
-        //!     StdOk(num) => println!("Got a number: {}", num),
-        //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
-        //! }
-        //! # }
-        //! #
-        //! # #[cfg(not(feature = "nightly"))]
-        //! # fn main() {}
-        //!
-        //! # #[cfg(feature = "nightly")]
-        //! fn get_number() -> StdResult<i64, FatalError> {
-        //!     // propagate any fatal error
-        //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 10)?;
-        //!
-        //!     // handle any local error
-        //!     let num = result.unwrap_or_else(|local_err| {
-        //!         println!("Local error: {:?}", local_err);
-        //!         i64::default()
-        //!     });
-        //!
-        //!     StdOk(num)
-        //! }
-        //!
-        //! # #[cfg(feature = "nightly")]
-        //! fn compare_numbers(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
-        //!     match x.cmp(&y) {
-        //!         Ordering::Greater => Ok(x),
-        //!         Ordering::Equal => LocalErr(LocalError::Equal),
-        //!         Ordering::Less => FatalErr(FatalError::Less),
-        //!     }
-        //! }
-        //!
-        //! # #[cfg(feature = "nightly")]
-        //! #[derive(Debug)]
-        //! enum LocalError { Equal }
-        //!
-        //! # #[cfg(feature = "nightly")]
-        //! #[derive(Debug)]
-        //! enum FatalError { Less }
-        //! ```
-    }
+    //! Putting the docs in Rustdoc means they can be run as documentation tests. Breaking them up into modules
+    //! helps keep them from getting too unwieldy, so people can still navigate the API itself with ease.
+    //!
+    //! `woah::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
+    //! easy to navigate. To help, this page explains them in groups of similar methods.
+    //!
+    //! [is]: #see-if-the-result-is-a-particular-variant
+    //! [contains]: #see-if-the-result-contains-a-value
+    //! [get]: #get-an-option-if-a-variant-is-present
+    //! [as_ref]: #reference-the-contained-value
+    //! [as_deref]: #dereference-the-contained-value
+    //! [map]: #map-over-the-contained-value
+    //! [iter]: #iterate-over-the-contained-value
+    //! [compose]: #compose-results
+    //! [unwrap]: #unwrap-the-result
+    //! [clone]: #copy-or-clone-the-contained-value
+    //! [transpose]: #transpose-when-holding-an-option
+    //! [convert]: #convert-to-and-from-a-stdresultresult
+    //! [try]: #use-woahresult-with-the-question-mark-operator
+    //! [main]: #use-woahresult-as-the-return-type-of-main
+    //! [from_iter]: #build-a-woahresult-from-an-iterator
+    //!
+    //! ## Methods
+    //!
+    //! ### See if the `Result` is a particular variant
+    //!
+    //! These methods, the "is" methods, return a `bool` based on what variant is present.
+    //!
+    //! 1. [`is_ok`](../../enum.Result.html#method.is_ok)
+    //! 2. [`is_err`](../../enum.Result.html#method.is_err)
+    //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
+    //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
+    //!
+    //! ### See if the `Result` contains a value
+    //!
+    //! These methods check if the `Result` contains a particular value.
+    //!
+    //! 1. [`contains`](../../enum.Result.html#method.contains)
+    //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
+    //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
+    //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
+    //!
+    //! ### Get an `Option` if a variant is present
+    //!
+    //! These methods try to get the contained value out, returning an `Option` in case it's
+    //! another variant.
+    //!
+    //! 1. [`ok`](../../enum.Result.html#method.ok)
+    //! 2. [`err`](../../enum.Result.html#method.err)
+    //! 3. [`local_err`](../../enum.Result.html#method.local_err)
+    //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
+    //!
+    //! ### Reference the contained value
+    //!
+    //! Gets a reference (immutable or mutable) to the contained value.
+    //!
+    //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
+    //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
+    //!
+    //! ### Dereference the contained value
+    //!
+    //! Dereferences the contained value if it implements `Deref`.
+    //!
+    //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
+    //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
+    //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
+    //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
+    //!
+    //! Dereferences the contained value mutably if it implements `DerefMut`.
+    //!
+    //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
+    //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
+    //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
+    //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
+    //!
+    //! ### Map over the contained value
+    //!
+    //! Applies some function to the contained value.
+    //!
+    //! 1. [`map`](../../enum.Result.html#method.map)
+    //! 2. [`map_or`](../../enum.Result.html#method.map_or)
+    //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
+    //!
+    //! Applies some function to the contained value, if it's a local or fatal error.
+    //!
+    //! 1. [`map_err`](../../enum.Result.html#method.map_err)
+    //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
+    //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
+    //!
+    //! Applies some function to the contained value, if it's a local error.
+    //!
+    //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
+    //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
+    //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
+    //!
+    //! Applies some function to the contained value, if it's a fatal error.
+    //!
+    //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
+    //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
+    //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
+    //!
+    //! ### Iterate over the contained value
+    //!
+    //! 1. [`iter`](../../enum.Result.html#method.iter)
+    //! 2. [`iter_mut`](../../enum.Result.html#method.iter_mut)
+    //! 3. [`into_iter`](../../enum.Result.html#impl-IntoIterator-2) (for `woah::Result`)
+    //! 4. [`into_iter`](../../enum.Result.html#impl-IntoIterator-1) (for `&woah::Result`)
+    //! 5. [`into_iter`](../../enum.Result.html#impl-IntoIterator) (for `&mut woah::Result`)
+    //!
+    //! ### Compose `Result`s
+    //!
+    //! 1. [`and`](../../enum.Result.html#method.and)
+    //! 2. [`and_then`](../../enum.Result.html#method.and_then)
+    //! 3. [`or`](../../enum.Result.html#method.or)
+    //! 4. [`or_else`](../../enum.Result.html#method.or_else)
+    //! 5. [`or_else_fatal`](../../enum.Result.html#method.or_else_fatal)
+    //! 6. [`or_else_local`](../../enum.Result.html#method.or_else_local)
+    //! 7. [`or_fatal`](../../enum.Result.html#method.or_fatal)
+    //! 8. [`or_local`](../../enum.Result.html#method.or_local)
+    //!
+    //! ### Unwrap the `Result`
+    //!
+    //! 1. [`unwrap`](../../enum.Result.html#method.unwrap)
+    //! 2. [`unwrap_err`](../../enum.Result.html#method.unwrap_err)
+    //! 3. [`unwrap_fatal_err`](../../enum.Result.html#method.unwrap_fatal_err)
+    //! 4. [`unwrap_local_err`](../../enum.Result.html#method.unwrap_local_err)
+    //! 5. [`unwrap_or`](../../enum.Result.html#method.unwrap_or)
+    //! 6. [`unwrap_or_default`](../../enum.Result.html#method.unwrap_or_default)
+    //! 7. [`unwrap_or_else`](../../enum.Result.html#method.unwrap_or_else)
+    //! 8. [`expect`](../../enum.Result.html#method.expect)
+    //! 9. [`expect_err`](../../enum.Result.html#method.expect_err)
+    //! 10. [`expect_fatal_err`](../../enum.Result.html#method.expect_fatal_err)
+    //! 11. [`expect_local_err`](../../enum.Result.html#method.expect_local_err)
+    //!
+    //! ### Copy or clone the contained value
+    //!
+    //! 1. [`cloned`](../../enum.Result.html#method.cloned) (for `&woah::Result`)
+    //! 2. [`cloned`](../../enum.Result.html#method.cloned-1) (for `&mut woah::Result`)
+    //! 1. [`copied`](../../enum.Result.html#method.copied) (for `&woah::Result`)
+    //! 2. [`copied`](../../enum.Result.html#method.copied-1) (for `&mut woah::Result`)
+    //!
+    //! ### Transpose when holding an `Option`
+    //!
+    //! 1. [`transpose`](../../enum.Result.html#method.transpose)
+    //!
+    //! ### Convert to and from a `std::result::Result`
+    //!
+    //! 1. [`into_result`](../../enum.Result.html#method.into_result)
+    //! 1. [`into_result_default`](../../enum.Result.html#method.into_result_default)
+    //!
+    //! ### Use `woah::Result` with the question mark operator
+    //!
+    //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with `nightly` feature or `try_trait` feature)
+    //!
+    //! ### Use `woah::Result` as the return type of `main`
+    //!
+    //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (nightly-only, with `nightly` feature, or `termination_trait` and `std` features)
+    //!
+    //! ### Build a `woah::Result` from an iterator
+    //!
+    //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with `nightly` feature, or `from_iterator_trait` feature)
+    //!
+    //! ## Features
+    //!
+    //! `woah` can be used on stable or nightly. On nightly, enabling the `nightly` feature is recommended,
+    //! to get the full power of the `woah::Result` type, including:
+    //!
+    //! * Being able to use it with the question mark operator,
+    //! * Being able to make it the return type of `fn main`,
+    //! * Gaining a number of useful additional methods, including `from_iter` (which enables easy conversion
+    //!   from `Vec<woah::Result<T, L, F>` into `woah::Result<Vec<T>, L, F>` via the `collect` method).
+    //!
+    //! The following table is the full list of features. If you want to use `woah` without any dependencies,
+    //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
+    //! methods.
+    //!
+    //!| Feature Name          | Channels              | Depends On         | What It Does |
+    //!|:----------------------|:----------------------|:-------------------|:-------------|
+    //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
+    //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+    //!| `serde`               | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
+    //!| `std`                 | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library conflicts with the `termination_trait` feature, so turning off `std` will automatically disable that feature._ |
+    //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
+    //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woah::Result` can be used with the question mark operator. |
+    //!| `trusted_len`         | Nightly               | None               | Enables `woah::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
+    //!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
+    //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woah::Result` to be used as the return type for the `main` function. _This requires the `std` feature to be turned on as well (which it is by default)._ |
+    //!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
+    //!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
+    //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woah::Result<T, L, F>>` into `woah::Result<Vec<T>, L, F>` |
+    //!
+    //!
+    //! ## Examples
+    //!
+    //! Examples of using `woah` on both stable and nightly.
+    //!
+    //! ### Example on stable
+    //!
+    //! ```
+    //! use woah::prelude::*;
+    //! use std::cmp::Ordering;
+    //!
+    //! match get_number() {
+    //!     StdOk(num) => println!("Got a number: {}", num),
+    //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+    //! }
+    //!
+    //! fn get_number() -> StdResult<i64, FatalError> {
+    //!     // propagate any fatal error
+    //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 5)?;
+    //!
+    //!     // handle any local error
+    //!     let num = result.unwrap_or_else(|local_err| {
+    //!         println!("Local error: {:?}", local_err);
+    //!         i64::default()
+    //!     });
+    //!
+    //!     StdOk(num)
+    //! }
+    //!
+    //! fn compare_numbers(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
+    //!     match x.cmp(&y) {
+    //!         Ordering::Greater => Ok(x),
+    //!         Ordering::Equal => LocalErr(LocalError::SomeError),
+    //!         Ordering::Less => FatalErr(FatalError::CatastrophicError),
+    //!     }.into_result()
+    //! }
+    //!
+    //! #[derive(Debug)]
+    //! enum LocalError { SomeError, AnotherError }
+    //!
+    //! #[derive(Debug)]
+    //! enum FatalError { BigBadError, CatastrophicError }
+    //! ```
+    //!
+    //! ### Example on nightly
+    //!
+    //! This uses `--features nightly` to enable nightly-only features.
+    //!
+    //! ```
+    //! use woah::prelude::*;
+    //! use std::cmp::Ordering;
+    //!
+    //! # #[cfg(feature = "nightly")]
+    //! # fn main() {
+    //! match get_number() {
+    //!     StdOk(num) => println!("Got a number: {}", num),
+    //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
+    //! }
+    //! # }
+    //! #
+    //! # #[cfg(not(feature = "nightly"))]
+    //! # fn main() {}
+    //!
+    //! # #[cfg(feature = "nightly")]
+    //! fn get_number() -> StdResult<i64, FatalError> {
+    //!     // propagate any fatal error
+    //!     let result: StdResult<i64, LocalError> = compare_numbers(5, 10)?;
+    //!
+    //!     // handle any local error
+    //!     let num = result.unwrap_or_else(|local_err| {
+    //!         println!("Local error: {:?}", local_err);
+    //!         i64::default()
+    //!     });
+    //!
+    //!     StdOk(num)
+    //! }
+    //!
+    //! # #[cfg(feature = "nightly")]
+    //! fn compare_numbers(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
+    //!     match x.cmp(&y) {
+    //!         Ordering::Greater => Ok(x),
+    //!         Ordering::Equal => LocalErr(LocalError::Equal),
+    //!         Ordering::Less => FatalErr(FatalError::Less),
+    //!     }
+    //! }
+    //!
+    //! # #[cfg(feature = "nightly")]
+    //! #[derive(Debug)]
+    //! enum LocalError { Equal }
+    //!
+    //! # #[cfg(feature = "nightly")]
+    //! #[derive(Debug)]
+    //! enum FatalError { Less }
+    //! ```
 }
 
 /// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
@@ -479,67 +429,30 @@ pub enum Result<T, L, F> {
 }
 
 #[cfg(feature = "try_trait")]
+impl<T, L, F> FromResidual for Result<T, L, F> {
+    fn from_residual(residual: F) -> Self {
+        Result::FatalErr(residual)
+    }
+}
+
+#[cfg(feature = "try_trait")]
 impl<T, L, F> Try for Result<T, L, F> {
-    type Ok = StdResult<T, L>;
-    type Error = F;
+    type Output = StdResult<T, L>;
+    type Residual = F;
 
-    /// Convert `woah::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
-    /// in `?` behavior.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
-    /// assert_eq!(result, StdOk(StdErr("a local error")));
-    /// ```
-    #[inline]
-    fn into_result(self) -> StdResult<StdResult<T, L>, F> {
-        self.into()
+    fn from_output(output: StdResult<T, L>) -> Self {
+        From::from(output)
     }
 
-    /// Construct the `FatalErr` variant based on some error.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
-    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
-    /// ```
-    #[inline]
-    fn from_error(err: F) -> Self {
-        FatalErr(err)
-    }
-
-    /// Construct either an `Ok` or `LocalErr` variant based on a
-    /// `Result`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// // Construct a `LocalErr` variant.
-    /// let local_err: Result<i64, &str, &str> = Result::from_ok(StdErr("a local error"));
-    /// assert_eq!(local_err, LocalErr("a local error"));
-    ///
-    /// // Construct an `Ok` variant.
-    /// let ok: Result<i64, &str, &str> = Result::from_ok(StdOk(42));
-    /// assert_eq!(ok, Ok(42));
-    /// ```
-    #[inline]
-    fn from_ok(ok: StdResult<T, L>) -> Self {
-        match ok {
-            StdOk(t) => Ok(t),
-            StdErr(err) => LocalErr(err),
+    fn branch(self) -> ControlFlow<F, StdResult<T, L>> {
+        match self {
+            Result::Ok(t) => ControlFlow::Continue(StdOk(t)),
+            Result::LocalErr(l) => ControlFlow::Continue(StdErr(l)),
+            Result::FatalErr(f) => ControlFlow::Break(f),
         }
     }
 }
 
-#[cfg(not(feature = "try_trait"))]
 impl<T, L, F> Result<T, L, F> {
     /// Convert `woah::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
     /// in `?` behavior.
@@ -590,9 +503,7 @@ impl<T, L, F> Result<T, L, F> {
             StdErr(err) => LocalErr(err),
         }
     }
-}
 
-impl<T, L, F> Result<T, L, F> {
     /// Returns `true` if the result is [`Ok`].
     ///
     /// [`Ok`]: enum.Result.html#variant.Ok
@@ -1571,7 +1482,8 @@ unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 #[cfg(any(
     feature = "from_iterator_trait",
     feature = "product_trait",
-    feature = "sum_trait"
+    feature = "sum_trait",
+    feature = "try_trait"
 ))]
 pub(crate) struct ResultShunt<'a, I, L, F> {
     iter: I,
@@ -1581,7 +1493,8 @@ pub(crate) struct ResultShunt<'a, I, L, F> {
 #[cfg(any(
     feature = "from_iterator_trait",
     feature = "product_trait",
-    feature = "sum_trait"
+    feature = "sum_trait",
+    feature = "try_trait"
 ))]
 #[inline]
 pub(crate) fn process_results<I, T, L, F, G, U>(iter: I, mut f: G) -> Result<U, L, F>
@@ -1601,7 +1514,8 @@ where
 #[cfg(any(
     feature = "from_iterator_trait",
     feature = "product_trait",
-    feature = "sum_trait"
+    feature = "sum_trait",
+    feature = "try_trait"
 ))]
 impl<I, T, L, F> Iterator for ResultShunt<'_, I, L, F>
 where
@@ -1628,83 +1542,59 @@ where
     fn try_fold<B, G, R>(&mut self, init: B, mut f: G) -> R
     where
         G: FnMut(B, Self::Item) -> R,
-        R: Try<Ok = B>,
+        R: Try<Output = B>,
     {
         let error = &mut *self.error;
-        self.iter
-            .try_fold(init, |acc, x| match x {
-                Ok(x) => LoopState::from_try(f(acc, x)),
-                LocalErr(e) => {
-                    *error = LocalErr(e);
-                    Break(Try::from_ok(acc))
-                }
-                FatalErr(e) => {
-                    *error = FatalErr(e);
-                    Break(Try::from_ok(acc))
-                }
-            })
-            .into_try()
+
+        into_try(self.iter.try_fold(init, |acc, x| match x {
+            Ok(x) => from_try(f(acc, x)),
+            LocalErr(l) => {
+                *error = LocalErr(l);
+                ControlFlow::Break(try { acc })
+            }
+            FatalErr(f) => {
+                *error = FatalErr(f);
+                ControlFlow::Break(try { acc })
+            }
+        }))
     }
 }
 
+/// Create a `ControlFlow` from any type implementing `Try`.
 #[cfg(any(
     feature = "from_iterator_trait",
     feature = "product_trait",
-    feature = "sum_trait"
+    feature = "sum_trait",
+    feature = "try_trait"
 ))]
-#[derive(PartialEq)]
-enum LoopState<C, B> {
-    Continue(C),
-    Break(B),
-}
-
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait"
-))]
-impl<C, B> Try for LoopState<C, B> {
-    type Ok = C;
-    type Error = B;
-
-    #[inline]
-    fn into_result(self) -> StdResult<Self::Ok, Self::Error> {
-        match self {
-            Continue(y) => StdOk(y),
-            Break(x) => StdErr(x),
-        }
-    }
-
-    #[inline]
-    fn from_error(v: Self::Error) -> Self {
-        Break(v)
-    }
-
-    #[inline]
-    fn from_ok(v: Self::Ok) -> Self {
-        Continue(v)
+#[inline]
+fn from_try<R: Try>(r: R) -> ControlFlow<R, R::Output> {
+    match R::branch(r) {
+        ControlFlow::Continue(v) => ControlFlow::Continue(v),
+        ControlFlow::Break(v) => ControlFlow::Break(R::from_residual(v)),
     }
 }
 
+/// Convert a `ControlFlow` into any type implementing `Try`;
 #[cfg(any(
     feature = "from_iterator_trait",
     feature = "product_trait",
-    feature = "sum_trait"
+    feature = "sum_trait",
+    feature = "try_trait"
 ))]
-impl<R: Try> LoopState<R::Ok, R> {
-    #[inline]
-    fn from_try(r: R) -> Self {
-        match Try::into_result(r) {
-            StdOk(v) => Continue(v),
-            StdErr(v) => Break(Try::from_error(v)),
-        }
+#[inline]
+fn into_try<R: Try>(cf: ControlFlow<R, R::Output>) -> R {
+    match cf {
+        ControlFlow::Continue(v) => R::from_output(v),
+        ControlFlow::Break(v) => v,
     }
+}
 
-    #[inline]
-    fn into_try(self) -> R {
-        match self {
-            Continue(v) => Try::from_ok(v),
-            Break(v) => v,
+impl<T, L, F> From<StdResult<T, L>> for Result<T, L, F> {
+    fn from(result: StdResult<T, L>) -> Result<T, L, F> {
+        match result {
+            StdOk(t) => Ok(t),
+            StdErr(l) => LocalErr(l),
         }
     }
 }
