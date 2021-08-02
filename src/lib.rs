@@ -25,20 +25,23 @@
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woah/issues/")]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
-#![cfg_attr(feature = "try_trait", feature(try_trait_v2))]
-#![cfg_attr(feature = "try_trait", feature(try_blocks))]
-#![cfg_attr(feature = "try_trait", feature(control_flow_enum))]
-#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_trait_v2)))))]
-#![cfg_attr(feature = "try_trait", doc(test(attr(feature(try_blocks)))))]
-#![cfg_attr(feature = "try_trait", doc(test(attr(feature(control_flow_enum)))))]
-// Turn on the `TrustedLen` trait.
-#![cfg_attr(feature = "trusted_len", feature(trusted_len))]
-// Enable use of the never type (`!`) in generic code.
-#![cfg_attr(feature = "never_type", feature(never_type))]
-// Turn on the `Termination` trait.
-#![cfg_attr(feature = "termination_trait", feature(termination_trait_lib))]
-// Turn on the `ExitCode` type.
-#![cfg_attr(feature = "termination_trait", feature(process_exitcode_placeholder))]
+#![cfg_attr(feature = "nightly", feature(try_trait_v2))]
+#![cfg_attr(feature = "nightly", feature(try_blocks))]
+#![cfg_attr(feature = "nightly", feature(control_flow_enum))]
+#![cfg_attr(feature = "nightly", feature(trusted_len))]
+#![cfg_attr(feature = "nightly", feature(never_type))]
+#![cfg_attr(feature = "nightly", feature(termination_trait_lib))]
+#![cfg_attr(feature = "nightly", feature(process_exitcode_placeholder))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(control_flow_enum)))))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(never_type)))))]
+#![cfg_attr(feature = "nightly", doc(test(attr(feature(termination_trait_lib)))))]
+#![cfg_attr(
+    feature = "nightly",
+    doc(test(attr(feature(process_exitcode_placeholder))))
+)]
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::cargo)]
@@ -50,33 +53,30 @@
 #![warn(missing_copy_implementations)]
 
 use crate::Result::{FatalErr, LocalErr, Ok};
+#[cfg(feature = "nightly")]
+use core::convert::Infallible;
+use core::convert::{From, Into};
 use core::fmt::Debug;
-#[cfg(feature = "from_iterator_trait")]
+#[cfg(feature = "nightly")]
 use core::iter::FromIterator;
-#[cfg(feature = "product_trait")]
+#[cfg(feature = "nightly")]
 use core::iter::Product;
-#[cfg(feature = "sum_trait")]
+#[cfg(feature = "nightly")]
 use core::iter::Sum;
-#[cfg(feature = "trusted_len")]
+#[cfg(feature = "nightly")]
 use core::iter::TrustedLen;
 use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
-#[cfg(feature = "try_trait")]
+#[cfg(feature = "nightly")]
 use core::ops::{FromResidual, Try};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 #[cfg(feature = "either_methods")]
 use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::{From, Into};
-#[cfg(all(feature = "termination_trait", feature = "std"))]
+#[cfg(all(feature = "nightly", feature = "std"))]
 use std::process::{ExitCode, Termination};
 
 pub mod prelude {
@@ -90,35 +90,30 @@ pub mod prelude {
     pub use std::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 
     // Import the Try trait.
-    #[cfg(feature = "try_trait")]
-    pub use std::ops::{Try, FromResidual};
+    #[cfg(feature = "nightly")]
+    pub use std::ops::{FromResidual, Try};
 
-    #[cfg(any(
-        feature = "from_iterator_trait",
-        feature = "product_trait",
-        feature = "sum_trait",
-        feature = "try_trait"
-    ))]
+    #[cfg(feature = "nightly")]
     pub use core::ops::ControlFlow;
 
     // Import the Termination trait.
-    #[cfg(all(feature = "termination_trait", feature = "std"))]
+    #[cfg(all(feature = "nightly", feature = "std"))]
     pub use std::process::Termination;
 
     // Import the FromIterator trait.
-    #[cfg(feature = "from_iterator_trait")]
+    #[cfg(feature = "nightly")]
     pub use core::iter::FromIterator;
 
     // Import the Product trait.
-    #[cfg(feature = "product_trait")]
+    #[cfg(feature = "nightly")]
     pub use core::iter::Product;
 
     // Import the Sum trait.
-    #[cfg(feature = "sum_trait")]
+    #[cfg(feature = "nightly")]
     pub use core::iter::Sum;
 
     // Import the TrustedLen trait.
-    #[cfg(feature = "trusted_len")]
+    #[cfg(feature = "nightly")]
     pub use core::iter::TrustedLen;
 }
 
@@ -428,27 +423,30 @@ pub enum Result<T, L, F> {
     FatalErr(F),
 }
 
-#[cfg(feature = "try_trait")]
+#[cfg(feature = "nightly")]
 impl<T, L, F> FromResidual for Result<T, L, F> {
-    fn from_residual(residual: F) -> Self {
-        Result::FatalErr(residual)
+    #[inline]
+    fn from_residual(residual: StdResult<Infallible, F>) -> Self {
+        Result::FatalErr(residual.unwrap_err())
     }
 }
 
-#[cfg(feature = "try_trait")]
+#[cfg(feature = "nightly")]
 impl<T, L, F> Try for Result<T, L, F> {
     type Output = StdResult<T, L>;
-    type Residual = F;
+    type Residual = StdResult<Infallible, F>;
 
+    #[inline]
     fn from_output(output: StdResult<T, L>) -> Self {
         From::from(output)
     }
 
-    fn branch(self) -> ControlFlow<F, StdResult<T, L>> {
+    #[inline]
+    fn branch(self) -> ControlFlow<StdResult<Infallible, F>, StdResult<T, L>> {
         match self {
             Result::Ok(t) => ControlFlow::Continue(StdOk(t)),
             Result::LocalErr(l) => ControlFlow::Continue(StdErr(l)),
-            Result::FatalErr(f) => ControlFlow::Break(f),
+            Result::FatalErr(f) => ControlFlow::Break(StdErr(f)),
         }
     }
 }
@@ -525,10 +523,7 @@ impl<T, L, F> Result<T, L, F> {
     #[must_use = "if you intended to assert that this is ok, consider `.unwrap()` instead"]
     #[inline]
     pub fn is_ok(&self) -> bool {
-        match self {
-            Ok(_) => true,
-            _ => false,
-        }
+        matches!(self, Ok(_))
     }
 
     /// Returns `true` if the result is [`LocalErr`] or [`FatalErr`].
@@ -577,10 +572,7 @@ impl<T, L, F> Result<T, L, F> {
     #[must_use = "if you intended to assert that this is local_err, consider `.unwrap_local_err()` instead"]
     #[inline]
     pub fn is_local_err(&self) -> bool {
-        match self {
-            LocalErr(_) => true,
-            _ => false,
-        }
+        matches!(self, LocalErr(_))
     }
 
     /// Returns `true` if the result is [`FatalErr`].
@@ -604,10 +596,7 @@ impl<T, L, F> Result<T, L, F> {
     #[must_use = "if you intended to assert that this is fatal_err, consider `.unwrap_fatal_err()` instead"]
     #[inline]
     pub fn is_fatal_err(&self) -> bool {
-        match self {
-            FatalErr(_) => true,
-            _ => false,
-        }
+        matches!(self, FatalErr(_))
     }
 
     /// Returns `true` if the result is an [`Ok`] value containing the given value.
@@ -634,10 +623,7 @@ impl<T, L, F> Result<T, L, F> {
     where
         U: PartialEq<T>,
     {
-        match self {
-            Ok(t) if *x == *t => true,
-            _ => false,
-        }
+        matches!(self, Ok(t) if *x == *t)
     }
 
     #[cfg(feature = "either_methods")]
@@ -661,10 +647,7 @@ impl<T, L, F> Result<T, L, F> {
     where
         E: PartialEq<L>,
     {
-        match self {
-            LocalErr(err) if *e == *err => true,
-            _ => false,
-        }
+        matches!(self, LocalErr(err) if *e == *err)
     }
 
     #[must_use]
@@ -673,10 +656,7 @@ impl<T, L, F> Result<T, L, F> {
     where
         E: PartialEq<F>,
     {
-        match self {
-            FatalErr(err) if *e == *err => true,
-            _ => false,
-        }
+        matches!(self, FatalErr(err) if *e == *err)
     }
 
     #[inline]
@@ -1118,7 +1098,7 @@ where
     }
 }
 
-#[cfg(feature = "never_type")]
+#[cfg(feature = "nightly")]
 impl<T, L, F> Result<T, L, F>
 where
     L: Into<!>,
@@ -1479,23 +1459,13 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 #[cfg(feature = "trusted_len")]
 unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 pub(crate) struct ResultShunt<'a, I, L, F> {
     iter: I,
     error: &'a mut Result<(), L, F>,
 }
 
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 #[inline]
 pub(crate) fn process_results<I, T, L, F, G, U>(iter: I, mut f: G) -> Result<U, L, F>
 where
@@ -1511,12 +1481,7 @@ where
     error.map(|()| value)
 }
 
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 impl<I, T, L, F> Iterator for ResultShunt<'_, I, L, F>
 where
     I: Iterator<Item = Result<T, L, F>>,
@@ -1561,12 +1526,7 @@ where
 }
 
 /// Create a `ControlFlow` from any type implementing `Try`.
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 #[inline]
 fn from_try<R: Try>(r: R) -> ControlFlow<R, R::Output> {
     match R::branch(r) {
@@ -1576,12 +1536,7 @@ fn from_try<R: Try>(r: R) -> ControlFlow<R, R::Output> {
 }
 
 /// Convert a `ControlFlow` into any type implementing `Try`;
-#[cfg(any(
-    feature = "from_iterator_trait",
-    feature = "product_trait",
-    feature = "sum_trait",
-    feature = "try_trait"
-))]
+#[cfg(feature = "nightly")]
 #[inline]
 fn into_try<R: Try>(cf: ControlFlow<R, R::Output>) -> R {
     match cf {
@@ -1611,9 +1566,9 @@ impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
     }
 }
 
-impl<T, L, F> Into<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
-    fn into(self) -> StdResult<StdResult<T, L>, F> {
-        match self {
+impl<T, L, F> From<Result<T, L, F>> for StdResult<StdResult<T, L>, F> {
+    fn from(other: Result<T, L, F>) -> StdResult<StdResult<T, L>, F> {
+        match other {
             Ok(ok) => StdOk(StdOk(ok)),
             LocalErr(err) => StdOk(StdErr(err)),
             FatalErr(err) => StdErr(err),
