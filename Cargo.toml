@@ -24,42 +24,11 @@ default = ["either_methods", "std"]
 # `Either<LocalErr, FatalErr>`.
 either_methods = ["either/use_std"]
 
-# Either is used in std mode.
-std = ["either_methods"]
+# Use types from the standard library.
+std = []
 
 # Enable all nightly-only features of the crate.
-nightly = [
-    "try_trait",
-    "trusted_len",
-    "never_type",
-    "termination_trait",
-    "product_trait",
-    "sum_trait",
-    "from_iterator_trait"
-]
-
-# Allow `woe::Result` to implement `std::ops::Try`
-try_trait = []
-
-# Enable `woe::{IntoIter, Iter, IterMut}` to all implement `TrustedLen`.
-trusted_len = []
-
-# Enable the `!` type, which allows a cheap `into_ok` conversion if the two error
-# types are both `!`.
-never_type = []
-
-# Enable implementation of the `Termination` trait when `Result::Ok` is `()` or `!`,
-# which lets `woe::Result` be used as the return type of `main`
-termination_trait = ["never_type"]
-
-# Enable the `Product` trait, whose implementation requires the `Try` trait.
-product_trait = ["try_trait"]
-
-# Enable the `Sum` trait, whose implementation requires the `Try` trait.
-sum_trait = ["try_trait"]
-
-# Enable the `FromIterator` trait, whose implementation requires the `Try` trait.
-from_iterator_trait = ["try_trait"]
+nightly = []
 
 [package.metadata.docs.rs]
 # Turn on all features on docs.rs (documentation explains which are nightly-only)

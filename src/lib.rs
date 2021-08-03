@@ -1265,7 +1265,7 @@ where
     }
 }
 
-#[cfg(feature = "from_iterator_trait")]
+#[cfg(feature = "nightly")]
 impl<A, V, L, F> FromIterator<Result<A, L, F>> for Result<V, L, F>
 where
     V: FromIterator<A>,
@@ -1309,7 +1309,7 @@ impl<T, L, F> IntoIterator for Result<T, L, F> {
     }
 }
 
-#[cfg(feature = "product_trait")]
+#[cfg(feature = "nightly")]
 impl<T, U, L, F> Product<Result<U, L, F>> for Result<T, L, F>
 where
     T: Product<U>,
@@ -1323,7 +1323,7 @@ where
     }
 }
 
-#[cfg(feature = "sum_trait")]
+#[cfg(feature = "nightly")]
 impl<T, U, L, F> Sum<Result<U, L, F>> for Result<T, L, F>
 where
     T: Sum<U>,
@@ -1337,7 +1337,7 @@ where
     }
 }
 
-#[cfg(all(feature = "termination_trait", feature = "std"))]
+#[cfg(all(feature = "nightly", feature = "std"))]
 impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
@@ -1353,7 +1353,7 @@ where
     }
 }
 
-#[cfg(all(feature = "termination_trait", feature = "std"))]
+#[cfg(all(feature = "nightly", feature = "std"))]
 impl<L, F> Termination for Result<!, L, F>
 where
     L: Debug,
@@ -1420,7 +1420,7 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 impl<'a, T> FusedIterator for Iter<'a, T> {}
 
-#[cfg(feature = "trusted_len")]
+#[cfg(feature = "nightly")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
 /// An iterator over a mutable reference to the `Ok` variant of a `woah::Result`.
@@ -1453,7 +1453,7 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
-#[cfg(feature = "trusted_len")]
+#[cfg(feature = "nightly")]
 unsafe impl<'a, T> TrustedLen for IterMut<'a, T> {}
 
 #[cfg(feature = "nightly")]
