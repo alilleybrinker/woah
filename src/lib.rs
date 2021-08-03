@@ -301,17 +301,10 @@ pub mod docs {
     //!| Feature Name          | Channels              | Depends On         | What It Does |
     //!|:----------------------|:----------------------|:-------------------|:-------------|
     //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
-    //!| `nightly`             | Nightly               | `try_trait`, `trusted_len`, `never_type`, `termination_trait`, `product_trait`, `sum_trait`, `from_iterator_trait` | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+    //!| `nightly`             | Nightly               | None               | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
     //!| `serde`               | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
     //!| `std`                 | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library conflicts with the `termination_trait` feature, so turning off `std` will automatically disable that feature._ |
     //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
-    //!| `try_trait`           | Nightly               | None               | Enables the `Try` trait, so `woah::Result` can be used with the question mark operator. |
-    //!| `trusted_len`         | Nightly               | None               | Enables `woah::Result::{IntoIter, Iter, IterMut}` to implement the `TrustedLen` trait. |
-    //!| `never_type`          | Nightly               | None               | Enables the `into_ok` method if both the `LocalErr` and `FatalErr` variant types are `!` (the never type). |
-    //!| `termination_trait`   | Nightly               | `never_type`       | Enables `woah::Result` to be used as the return type for the `main` function. _This requires the `std` feature to be turned on as well (which it is by default)._ |
-    //!| `product_trait`       | Nightly               | `try_trait`        | Enables the `std::iter::Product` trait. |
-    //!| `sum_trait`           | Nightly               | `try_trait`        | Enables the `std::iter::Sum` trait. |
-    //!| `from_iterator_trait` | Nightly               | `try_trait`        | Enables the `FromIterator` trait, which also enables convenient `collect`ing of `Vec<woah::Result<T, L, F>>` into `woah::Result<Vec<T>, L, F>` |
     //!
     //!
     //! ## Examples
