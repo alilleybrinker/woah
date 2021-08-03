@@ -10,22 +10,20 @@
 use std::ops::Try as _;
 
 fn main() -> Result<(), FatalError> {
-    let data = get_data_from_api()?;
-
+	let data = get_data_from_api()?;
 	println!("Data: {}", data),
-
 	Ok(())
 }
 
 fn get_data_from_api() -> Result<String, FatalError> {
-    // If the error is fatal, return early!
-    let result = request_url("https://some_website.whatever/api/get_data")?;
+	// If the error is fatal, return early!
+	let result = request_url("https://some_website.whatever/api/get_data")?;
 
-    match result {
+	match result {
 		// If the error is recoverable, handle it.
-        Err(RecoverableError::Redirected { new_url }) => request_url(new_url),
-        Ok(num) => Ok(num),
-    }
+		Err(RecoverableError::Redirected { new_url }) => request_url(new_url),
+		Ok(num) => Ok(num),
+	}
 }
 
 fn request_url(url: &str) -> woah::Result<String, RecoverableError, FatalError> {
@@ -38,7 +36,7 @@ enum RecoverableError {
 
 #[derive(Debug)]
 enum FatalError {
-    CouldntConnect,
+	CouldntConnect,
 }
 ```
 
