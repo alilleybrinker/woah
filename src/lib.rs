@@ -30,18 +30,11 @@
 #![cfg_attr(feature = "nightly", feature(control_flow_enum))]
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
 #![cfg_attr(feature = "nightly", feature(never_type))]
-#![cfg_attr(feature = "nightly", feature(termination_trait_lib))]
-#![cfg_attr(feature = "nightly", feature(process_exitcode_placeholder))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(control_flow_enum)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(never_type)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(termination_trait_lib)))))]
-#![cfg_attr(
-    feature = "nightly",
-    doc(test(attr(feature(process_exitcode_placeholder))))
-)]
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::cargo)]
@@ -76,7 +69,7 @@ use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as Std
 use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(all(feature = "nightly", feature = "std"))]
+#[cfg(feature = "std")]
 use std::process::{ExitCode, Termination};
 
 pub mod prelude {
@@ -97,7 +90,7 @@ pub mod prelude {
     pub use core::ops::ControlFlow;
 
     // Import the Termination trait.
-    #[cfg(all(feature = "nightly", feature = "std"))]
+    #[cfg(feature = "std")]
     pub use std::process::Termination;
 
     // Import the FromIterator trait.
@@ -1330,18 +1323,24 @@ where
     }
 }
 
-#[cfg(all(feature = "nightly", feature = "std"))]
+#[cfg(feature = "std")]
 impl<L, F> Termination for Result<(), L, F>
 where
     L: Debug,
     F: Debug,
 {
     #[inline]
-    fn report(self) -> i32 {
+    fn report(self) -> ExitCode {
         match self {
             Ok(()) => ().report(),
-            LocalErr(err) => LocalErr::<!, L, F>(err).report(),
-            FatalErr(err) => FatalErr::<!, L, F>(err).report(),
+            LocalErr(err) => {
+                eprintln!("Error: {:?}", err);
+                ExitCode::FAILURE.report()
+            }
+            FatalErr(err) => {
+                eprintln!("Error: {:?}", err);
+                ExitCode::FAILURE.report()
+            }
         }
     }
 }
@@ -1353,7 +1352,7 @@ where
     F: Debug,
 {
     #[inline]
-    fn report(self) -> i32 {
+    fn report(self) -> ExitCode {
         match self {
             LocalErr(err) => {
                 eprintln!("Error: {:?}", err);
