@@ -30,6 +30,9 @@ std = []
 # Enable all nightly-only features of the crate.
 nightly = []
 
+[dev-dependencies]
+rand = "0.8.5"
+
 [package.metadata.docs.rs]
 # Turn on all features on docs.rs (documentation explains which are nightly-only)
 features = ['default', 'serde', 'nightly']
