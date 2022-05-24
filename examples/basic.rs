@@ -5,7 +5,6 @@
 
 use rand::prelude::*;
 use std::fmt::{self, Display, Formatter};
-use std::result::Result as StdResult;
 use woah::prelude::*;
 
 // Convenience type with `LocalError` and `FatalError` filled in.
@@ -13,7 +12,7 @@ type RequestResult<T> = Result<T, LocalError, FatalError>;
 
 fn main() {
     match get_data() {
-        Ok(data) => println!("{}", data),
+        Success(data) => println!("{}", data),
         LocalErr(e) => eprintln!("error: {}", e),
         FatalErr(e) => eprintln!("error: {}", e),
     }
@@ -22,8 +21,8 @@ fn main() {
 /// Get data from an HTTP API.
 fn get_data() -> RequestResult<String> {
     match do_http_request()? {
-        StdResult::Ok(data) => Ok(data),
-        StdResult::Err(e) => {
+        Ok(data) => Success(data),
+        Err(e) => {
             eprintln!("error: {}... retrying", e);
             get_data()
         }

@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! enum Result<T, L, F> {
-//!     Ok(T),
+//!     Success(T),
 //!     LocalErr(L),
 //!     FatalErr(F),
 //! }
@@ -45,7 +45,7 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
-use crate::Result::{FatalErr, LocalErr, Ok};
+use crate::Result::{FatalErr, LocalErr, Success};
 #[cfg(feature = "nightly")]
 use core::convert::Infallible;
 use core::convert::{From, Into};
@@ -79,7 +79,7 @@ pub mod prelude {
     //! to make `woah::Result` fully-featured, based on feature flags.
 
     // Replace `std::result::Result` with `woah::Result`.
-    pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Ok};
+    pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Success};
     pub use std::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 
     // Import the Try trait.
@@ -143,7 +143,7 @@ pub mod docs {
     //!
     //! These methods, the "is" methods, return a `bool` based on what variant is present.
     //!
-    //! 1. [`is_ok`](../../enum.Result.html#method.is_ok)
+    //! 1. [`is_success`](../../enum.Result.html#method.is_success)
     //! 2. [`is_err`](../../enum.Result.html#method.is_err)
     //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
     //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
@@ -306,7 +306,7 @@ pub mod docs {
     //!
     //! ### Example on stable
     //!
-    //! ```
+    //!```
     //! use woah::prelude::*;
     //! use std::cmp::Ordering;
     //!
@@ -330,7 +330,7 @@ pub mod docs {
     //!
     //! fn compare_numbers(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
     //!     match x.cmp(&y) {
-    //!         Ordering::Greater => Ok(x),
+    //!         Ordering::Greater => Success(x),
     //!         Ordering::Equal => LocalErr(LocalError::SomeError),
     //!         Ordering::Less => FatalErr(FatalError::CatastrophicError),
     //!     }.into_result()
@@ -379,7 +379,7 @@ pub mod docs {
     //! # #[cfg(feature = "nightly")]
     //! fn compare_numbers(x: i64, y: i64) -> Result<i64, LocalError, FatalError> {
     //!     match x.cmp(&y) {
-    //!         Ordering::Greater => Ok(x),
+    //!         Ordering::Greater => Success(x),
     //!         Ordering::Equal => LocalErr(LocalError::Equal),
     //!         Ordering::Less => FatalErr(FatalError::Less),
     //!     }
@@ -395,14 +395,14 @@ pub mod docs {
     //! ```
 }
 
-/// A type representing success (`Ok`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
+/// A type representing success (`Success`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 ///
 /// See the [`woah`](index.html) top-level documentation for details.
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 #[must_use = "this `Result` may be a `LocalErr`, which should be handled, or a `FatalErr`, which should be propagated"]
 pub enum Result<T, L, F> {
     /// Contains the success value.
-    Ok(T),
+    Success(T),
     /// Contains a local error value (which should be handled)
     LocalErr(L),
     /// Contains a fatal error value (which should be propagated)
@@ -430,7 +430,7 @@ impl<T, L, F> Try for Result<T, L, F> {
     #[inline]
     fn branch(self) -> ControlFlow<StdResult<Infallible, F>, StdResult<T, L>> {
         match self {
-            Result::Ok(t) => ControlFlow::Continue(StdOk(t)),
+            Result::Success(t) => ControlFlow::Continue(StdOk(t)),
             Result::LocalErr(l) => ControlFlow::Continue(StdErr(l)),
             Result::FatalErr(f) => ControlFlow::Break(StdErr(f)),
         }
@@ -469,7 +469,7 @@ impl<T, L, F> Result<T, L, F> {
         FatalErr(err)
     }
 
-    /// Construct either an `Ok` or `LocalErr` variant based on a
+    /// Construct either a `Success` or `LocalErr` variant based on a
     /// `Result`.
     ///
     /// # Example
@@ -483,33 +483,33 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn from_ok(ok: StdResult<T, L>) -> Self {
         match ok {
-            StdOk(t) => Ok(t),
+            StdOk(t) => Success(t),
             StdErr(err) => LocalErr(err),
         }
     }
 
-    /// Returns `true` if the result is [`Ok`].
+    /// Returns `true` if the result is [`Success`].
     ///
-    /// [`Ok`]: enum.Result.html#variant.Ok
+    /// [`Success`]: enum.Result.html#variant.Success
     ///
     /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let x: Result<i32, &str, &str> = Ok(-3);
-    /// assert_eq!(x.is_ok(), true);
+    /// let x: Result<i32, &str, &str> = Success(-3);
+    /// assert_eq!(x.is_success(), true);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
-    /// assert_eq!(x.is_ok(), false);
+    /// assert_eq!(x.is_success(), false);
     ///
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
-    /// assert_eq!(x.is_ok(), false);
+    /// assert_eq!(x.is_success(), false);
     /// ```
     #[must_use = "if you intended to assert that this is ok, consider `.unwrap()` instead"]
     #[inline]
-    pub fn is_ok(&self) -> bool {
-        matches!(self, Ok(_))
+    pub fn is_success(&self) -> bool {
+        matches!(self, Success(_))
     }
 
     /// Returns `true` if the result is [`LocalErr`] or [`FatalErr`].
@@ -522,7 +522,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let x: Result<i32, &str, &str> = Ok(-3);
+    /// let x: Result<i32, &str, &str> = Success(-3);
     /// assert_eq!(x.is_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
@@ -534,7 +534,7 @@ impl<T, L, F> Result<T, L, F> {
     #[must_use = "if you intended to assert that this is err, consider `.unwrap_err()` instead"]
     #[inline]
     pub fn is_err(&self) -> bool {
-        !self.is_ok()
+        !self.is_success()
     }
 
     /// Returns `true` if the result is [`LocalErr`].
@@ -546,7 +546,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let x: Result<i32, &str, &str> = Ok(-3);
+    /// let x: Result<i32, &str, &str> = Success(-3);
     /// assert_eq!(x.is_local_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
@@ -570,7 +570,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let x: Result<i32, &str, &str> = Ok(-3);
+    /// let x: Result<i32, &str, &str> = Success(-3);
     /// assert_eq!(x.is_fatal_err(), false);
     ///
     /// let x: Result<i32, &str, &str> = LocalErr("Some error message");
@@ -585,19 +585,19 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, FatalErr(_))
     }
 
-    /// Returns `true` if the result is an [`Ok`] value containing the given value.
+    /// Returns `true` if the result is a [`Success`] value containing the given value.
     ///
-    /// [`Ok`]: enum.Result.html#variant.Ok
+    /// [`Success`]: enum.Result.html#variant.Success
     ///
     /// # Examples
     ///
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let x: Result<u32, &str, &str> = Ok(2);
+    /// let x: Result<u32, &str, &str> = Success(2);
     /// assert_eq!(x.contains(&2), true);
     ///
-    /// let x: Result<u32, &str, &str> = Ok(3);
+    /// let x: Result<u32, &str, &str> = Success(3);
     /// assert_eq!(x.contains(&2), false);
     ///
     /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
@@ -609,7 +609,7 @@ impl<T, L, F> Result<T, L, F> {
     where
         U: PartialEq<T>,
     {
-        matches!(self, Ok(t) if *x == *t)
+        matches!(self, Success(t) if *x == *t)
     }
 
     #[cfg(feature = "either_methods")]
@@ -645,7 +645,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn ok(self) -> Option<T> {
         match self {
-            Ok(t) => Some(t),
+            Success(t) => Some(t),
             _ => None,
         }
     }
@@ -679,7 +679,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn as_ref(&self) -> Result<&T, &L, &F> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -688,7 +688,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -700,7 +700,7 @@ impl<T, L, F> Result<T, L, F> {
         U: FnOnce(T) -> S,
     {
         match self {
-            Ok(t) => Ok(f(t)),
+            Success(t) => Success(f(t)),
             LocalErr(e) => LocalErr(e),
             FatalErr(e) => FatalErr(e),
         }
@@ -712,7 +712,7 @@ impl<T, L, F> Result<T, L, F> {
         G: FnOnce(T) -> U,
     {
         match self {
-            Ok(t) => f(t),
+            Success(t) => f(t),
             _ => default,
         }
     }
@@ -725,7 +725,7 @@ impl<T, L, F> Result<T, L, F> {
         G: FnOnce(T) -> U,
     {
         match self {
-            Ok(t) => f(t),
+            Success(t) => f(t),
             LocalErr(err) => default_local(err),
             FatalErr(err) => default_fatal(err),
         }
@@ -738,7 +738,7 @@ impl<T, L, F> Result<T, L, F> {
         U: FnOnce(Either<L, F>) -> Either<M, G>,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => match f(Left(err)) {
                 Left(err) => LocalErr(err),
                 Right(err) => FatalErr(err),
@@ -756,7 +756,7 @@ impl<T, L, F> Result<T, L, F> {
         U: FnOnce(L) -> S,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(e) => LocalErr(f(e)),
             FatalErr(e) => FatalErr(e),
         }
@@ -768,7 +768,7 @@ impl<T, L, F> Result<T, L, F> {
         U: FnOnce(F) -> S,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(e) => LocalErr(e),
             FatalErr(e) => FatalErr(f(e)),
         }
@@ -777,7 +777,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn iter(&self) -> Iter<T> {
         let inner = match self {
-            Ok(t) => Some(t),
+            Success(t) => Some(t),
             _ => None,
         };
 
@@ -787,7 +787,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<T> {
         let inner = match self {
-            Ok(t) => Some(t),
+            Success(t) => Some(t),
             _ => None,
         };
 
@@ -797,7 +797,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn and<U>(self, res: Result<U, L, F>) -> Result<U, L, F> {
         match self {
-            Ok(_) => res,
+            Success(_) => res,
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -809,7 +809,7 @@ impl<T, L, F> Result<T, L, F> {
         G: FnOnce(T) -> Result<U, L, F>,
     {
         match self {
-            Ok(t) => op(t),
+            Success(t) => op(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -822,7 +822,7 @@ impl<T, L, F> Result<T, L, F> {
         res_fatal: Result<T, M, G>,
     ) -> Result<T, M, G> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(_) => res_local,
             FatalErr(_) => res_fatal,
         }
@@ -831,7 +831,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn or_local<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(_) => res,
             FatalErr(err) => FatalErr(err),
         }
@@ -840,7 +840,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn or_fatal<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(_) => res,
         }
@@ -853,7 +853,7 @@ impl<T, L, F> Result<T, L, F> {
         P: FnOnce(F) -> Result<T, M, G>,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => op_local(err),
             FatalErr(err) => op_fatal(err),
         }
@@ -865,7 +865,7 @@ impl<T, L, F> Result<T, L, F> {
         O: FnOnce(L) -> Result<T, M, F>,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => op(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -877,7 +877,7 @@ impl<T, L, F> Result<T, L, F> {
         O: FnOnce(F) -> Result<T, L, G>,
     {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => op(err),
         }
@@ -886,7 +886,7 @@ impl<T, L, F> Result<T, L, F> {
     #[inline]
     pub fn unwrap_or(self, optb: T) -> T {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             _ => optb,
         }
     }
@@ -898,7 +898,7 @@ impl<T, L, F> Result<T, L, F> {
         G: FnOnce(F) -> T,
     {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             LocalErr(err) => local_op(err),
             FatalErr(err) => fatal_op(err),
         }
@@ -912,7 +912,7 @@ where
     #[inline]
     pub fn copied(self) -> Result<T, L, F> {
         match self {
-            Ok(t) => Ok(*t),
+            Success(t) => Success(*t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -926,7 +926,7 @@ where
     #[inline]
     pub fn copied(self) -> Result<T, L, F> {
         match self {
-            Ok(t) => Ok(*t),
+            Success(t) => Success(*t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -940,7 +940,7 @@ where
     #[inline]
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
-            Ok(t) => Ok(t.clone()),
+            Success(t) => Success(t.clone()),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -954,7 +954,7 @@ where
     #[inline]
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
-            Ok(t) => Ok(t.clone()),
+            Success(t) => Success(t.clone()),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -969,7 +969,7 @@ where
     #[inline]
     pub fn unwrap(self) -> T {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             LocalErr(err) => panic!("{:?}", err),
             FatalErr(err) => panic!("{:?}", err),
         }
@@ -978,7 +978,7 @@ where
     #[inline]
     pub fn expect(self, msg: &str) -> T {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             LocalErr(_) => panic!("{}", msg),
             FatalErr(_) => panic!("{}", msg),
         }
@@ -995,7 +995,7 @@ where
     #[inline]
     pub fn unwrap_err(self) -> Either<L, F> {
         match self {
-            Ok(t) => panic!("{:?}", t),
+            Success(t) => panic!("{:?}", t),
             LocalErr(err) => Left(err),
             FatalErr(err) => Right(err),
         }
@@ -1004,7 +1004,7 @@ where
     #[inline]
     pub fn expect_err(self, msg: &str) -> Either<L, F> {
         match self {
-            Ok(_) => panic!("{}", msg),
+            Success(_) => panic!("{}", msg),
             LocalErr(err) => Left(err),
             FatalErr(err) => Right(err),
         }
@@ -1019,7 +1019,7 @@ where
     #[inline]
     pub fn unwrap_local_err(self) -> L {
         match self {
-            Ok(t) => panic!("{:?}", t),
+            Success(t) => panic!("{:?}", t),
             LocalErr(err) => err,
             FatalErr(err) => panic!("{:?}", err),
         }
@@ -1028,7 +1028,7 @@ where
     #[inline]
     pub fn expect_local_err(self, msg: &str) -> L {
         match self {
-            Ok(_) => panic!("{}", msg),
+            Success(_) => panic!("{}", msg),
             LocalErr(err) => err,
             FatalErr(_) => panic!("{}", msg),
         }
@@ -1043,7 +1043,7 @@ where
     #[inline]
     pub fn unwrap_fatal_err(self) -> F {
         match self {
-            Ok(t) => panic!("{:?}", t),
+            Success(t) => panic!("{:?}", t),
             LocalErr(err) => panic!("{:?}", err),
             FatalErr(err) => err,
         }
@@ -1052,7 +1052,7 @@ where
     #[inline]
     pub fn expect_fatal_err(self, msg: &str) -> F {
         match self {
-            Ok(_) => panic!("{}", msg),
+            Success(_) => panic!("{}", msg),
             LocalErr(_) => panic!("{}", msg),
             FatalErr(err) => err,
         }
@@ -1066,7 +1066,7 @@ where
     #[inline]
     pub fn unwrap_or_default(self) -> T {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             _ => T::default(),
         }
     }
@@ -1074,7 +1074,7 @@ where
     #[inline]
     pub fn into_result_default(self) -> StdResult<T, F> {
         match self {
-            Ok(t) => StdOk(t),
+            Success(t) => StdOk(t),
             LocalErr(_) => StdOk(T::default()),
             FatalErr(err) => StdErr(err),
         }
@@ -1090,7 +1090,7 @@ where
     #[inline]
     pub fn into_ok(self) -> T {
         match self {
-            Ok(t) => t,
+            Success(t) => t,
             LocalErr(err) => err.into(),
             FatalErr(err) => err.into(),
         }
@@ -1104,7 +1104,7 @@ where
     #[inline]
     pub fn as_deref(&self) -> Result<&<T as Deref>::Target, &L, &F> {
         match self {
-            Ok(t) => Ok(t.deref()),
+            Success(t) => Success(t.deref()),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -1119,7 +1119,7 @@ where
     #[inline]
     pub fn as_deref_err(&self) -> Result<&T, &<L as Deref>::Target, &<F as Deref>::Target> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err.deref()),
             FatalErr(err) => FatalErr(err.deref()),
         }
@@ -1133,7 +1133,7 @@ where
     #[inline]
     pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err.deref()),
             FatalErr(err) => FatalErr(err),
         }
@@ -1147,7 +1147,7 @@ where
     #[inline]
     pub fn as_deref_fatal_err(&self) -> Result<&T, &L, &<F as Deref>::Target> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err.deref()),
         }
@@ -1161,7 +1161,7 @@ where
     #[inline]
     pub fn as_deref_mut(&mut self) -> Result<&mut <T as Deref>::Target, &mut L, &mut F> {
         match self {
-            Ok(t) => Ok(t.deref_mut()),
+            Success(t) => Success(t.deref_mut()),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err),
         }
@@ -1178,7 +1178,7 @@ where
         &mut self,
     ) -> Result<&mut T, &mut <L as Deref>::Target, &mut <F as Deref>::Target> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err.deref_mut()),
             FatalErr(err) => FatalErr(err.deref_mut()),
         }
@@ -1192,7 +1192,7 @@ where
     #[inline]
     pub fn as_deref_mut_local_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut F> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err.deref_mut()),
             FatalErr(err) => FatalErr(err),
         }
@@ -1206,7 +1206,7 @@ where
     #[inline]
     pub fn as_deref_mut_fatal_err(&mut self) -> Result<&mut T, &mut L, &mut <F as Deref>::Target> {
         match self {
-            Ok(t) => Ok(t),
+            Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
             FatalErr(err) => FatalErr(err.deref_mut()),
         }
@@ -1217,8 +1217,8 @@ impl<T, L, F> Result<Option<T>, L, F> {
     #[inline]
     pub fn transpose(self) -> Option<Result<T, L, F>> {
         match self {
-            Ok(Some(t)) => Some(Ok(t)),
-            Ok(None) => None,
+            Success(Some(t)) => Some(Success(t)),
+            Success(None) => None,
             LocalErr(err) => Some(LocalErr(err)),
             FatalErr(err) => Some(FatalErr(err)),
         }
@@ -1234,7 +1234,7 @@ where
     #[inline]
     fn clone(&self) -> Result<T, L, F> {
         match self {
-            Ok(t) => Ok(t.clone()),
+            Success(t) => Success(t.clone()),
             LocalErr(err) => LocalErr(err.clone()),
             FatalErr(err) => FatalErr(err.clone()),
         }
@@ -1243,7 +1243,7 @@ where
     #[inline]
     fn clone_from(&mut self, source: &Result<T, L, F>) {
         match (self, source) {
-            (Ok(to), Ok(from)) => to.clone_from(from),
+            (Success(to), Success(from)) => to.clone_from(from),
             (LocalErr(to), LocalErr(from)) => to.clone_from(from),
             (FatalErr(to), FatalErr(from)) => to.clone_from(from),
             (to, from) => *to = from.clone(),
@@ -1332,7 +1332,7 @@ where
     #[inline]
     fn report(self) -> ExitCode {
         match self {
-            Ok(()) => ().report(),
+            Success(()) => ().report(),
             LocalErr(err) => {
                 eprintln!("Error: {:?}", err);
                 ExitCode::FAILURE.report()
@@ -1362,12 +1362,12 @@ where
                 eprintln!("Error: {:?}", err);
                 ExitCode::FAILURE.report()
             }
-            Ok(t) => t,
+            Success(t) => t,
         }
     }
 }
 
-/// An iterator over the value in an `Ok` variant of a `woah::Result`.
+/// An iterator over the value in an `Success` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct IntoIter<T> {
     inner: Option<T>,
@@ -1382,7 +1382,7 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
-/// An iterator over a reference to the `Ok` variant of a `woah::Result`.
+/// An iterator over a reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct Iter<'a, T: 'a> {
     inner: Option<&'a T>,
@@ -1415,7 +1415,7 @@ impl<'a, T> FusedIterator for Iter<'a, T> {}
 #[cfg(feature = "nightly")]
 unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
-/// An iterator over a mutable reference to the `Ok` variant of a `woah::Result`.
+/// An iterator over a mutable reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
 pub struct IterMut<'a, T: 'a> {
     inner: Option<&'a mut T>,
@@ -1461,7 +1461,7 @@ where
     I: Iterator<Item = Result<T, L, F>>,
     for<'a> G: FnMut(ResultShunt<'a, I, L, F>) -> U,
 {
-    let mut error = Ok(());
+    let mut error = Success(());
     let shunt = ResultShunt {
         iter,
         error: &mut error,
@@ -1501,7 +1501,7 @@ where
         let error = &mut *self.error;
 
         into_try(self.iter.try_fold(init, |acc, x| match x {
-            Ok(x) => from_try(f(acc, x)),
+            Success(x) => from_try(f(acc, x)),
             LocalErr(l) => {
                 *error = LocalErr(l);
                 ControlFlow::Break(try { acc })
@@ -1537,7 +1537,7 @@ fn into_try<R: Try>(cf: ControlFlow<R, R::Output>) -> R {
 impl<T, L, F> From<StdResult<T, L>> for Result<T, L, F> {
     fn from(result: StdResult<T, L>) -> Result<T, L, F> {
         match result {
-            StdOk(t) => Ok(t),
+            StdOk(t) => Success(t),
             StdErr(l) => LocalErr(l),
         }
     }
@@ -1547,7 +1547,7 @@ impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
     fn from(result: StdResult<StdResult<T, L>, F>) -> Result<T, L, F> {
         match result {
             StdOk(inner) => match inner {
-                StdOk(ok) => Ok(ok),
+                StdOk(ok) => Success(ok),
                 StdErr(err) => LocalErr(err),
             },
             StdErr(err) => FatalErr(err),
@@ -1558,7 +1558,7 @@ impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
 impl<T, L, F> From<Result<T, L, F>> for StdResult<StdResult<T, L>, F> {
     fn from(other: Result<T, L, F>) -> StdResult<StdResult<T, L>, F> {
         match other {
-            Ok(ok) => StdOk(StdOk(ok)),
+            Success(ok) => StdOk(StdOk(ok)),
             LocalErr(err) => StdOk(StdErr(err)),
             FatalErr(err) => StdErr(err),
         }
