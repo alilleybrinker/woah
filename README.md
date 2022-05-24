@@ -8,8 +8,8 @@ __A `Result` that separates local errors you can handle from fatal errors you ca
 
 Sometimes you want to be able to pass some errors upward without handling them, while
 conveniently handling other kinds of errors at a local level. You might try to do
-this with manual pattern-matching a `Result`, or by constructing a
-`Result<T, LocalError>, FatalError`. Instead, you can use `woah`!
+this with manual pattern-matching on a `Result`, or by constructing a
+`Result<Result<T, LocalError>, FatalError>`. Instead, you can use `woah`!
 
 ## Example
 
