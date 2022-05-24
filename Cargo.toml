@@ -18,14 +18,12 @@ either = { version = "1.5", default-features = false, optional = true }
 serde = { version = "1.0.127", optional = true }
 
 [features]
-default = ["either_methods", "std"]
-
-# This uses the `either` crate to enable methods which work on
-# `Either<LocalErr, FatalErr>`.
-either_methods = ["either/use_std"]
+default = ["either", "std"]
 
 # Use types from the standard library.
-std = []
+#
+# If `either` is also enabled, turn on `std` for it too.
+std = ["either?/use_std"]
 
 # Enable all nightly-only features of the crate.
 nightly = []

@@ -3,9 +3,9 @@
 // Compile with `cargo +nightly check --examples --features=nightly`
 // Run with `cargo +nightly run --example std_result_interop --features=nightly`
 
-use woah::prelude::*;
-use std::result::Result as StdResult;
 use std::fmt::{self, Display, Formatter};
+use std::result::Result as StdResult;
+use woah::prelude::*;
 
 fn main() {
     let r1 = woah_to_std();
@@ -67,4 +67,3 @@ impl Display for FatalError {
         }
     }
 }
-

@@ -65,7 +65,7 @@ use core::ops::{Deref, DerefMut};
 #[cfg(feature = "nightly")]
 use core::ops::{FromResidual, Try};
 use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
-#[cfg(feature = "either_methods")]
+#[cfg(feature = "either")]
 use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -80,11 +80,11 @@ pub mod prelude {
 
     // Replace `std::result::Result` with `woah::Result`.
     pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Success};
-    pub use std::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
+    pub use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
 
     // Import the Try trait.
     #[cfg(feature = "nightly")]
-    pub use std::ops::{FromResidual, Try};
+    pub use core::ops::{FromResidual, Try};
 
     #[cfg(feature = "nightly")]
     pub use core::ops::ControlFlow;
@@ -288,16 +288,16 @@ pub mod docs {
     //!   from `Vec<woah::Result<T, L, F>` into `woah::Result<Vec<T>, L, F>` via the `collect` method).
     //!
     //! The following table is the full list of features. If you want to use `woah` without any dependencies,
-    //! you can disable the `either_methods` feature, which otherwise imports the `either` crate to add additional
+    //! you can disable the `either` feature, which otherwise imports the `either` crate to add additional
     //! methods.
     //!
-    //!| Feature Name          | Channels              | Depends On         | What It Does |
-    //!|:----------------------|:----------------------|:-------------------|:-------------|
-    //!| `default`             | Stable, Beta, Nightly | `either_methods`   | Enables default features (currently just `either_methods`). |
-    //!| `nightly`             | Nightly               | None               | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
-    //!| `serde`               | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
-    //!| `std`                 | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library conflicts with the `termination_trait` feature, so turning off `std` will automatically disable that feature._ |
-    //!| `either_methods`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
+    //!| Feature Name  | Channels              | Depends On         | What It Does |
+    //!|:--------------|:----------------------|:-------------------|:-------------|
+    //!| `default`     | Stable, Beta, Nightly | `either`           | Enables default features (currently `either` and `std`). |
+    //!| `nightly`     | Nightly               | None               | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+    //!| `serde`       | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
+    //!| `std`         | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library eliminates the `Termination` trait and `ExitCode` type._ |
+    //!| `either`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
     //!
     //!
     //! ## Examples
@@ -612,7 +612,7 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, Success(t) if *x == *t)
     }
 
-    #[cfg(feature = "either_methods")]
+    #[cfg(feature = "either")]
     #[must_use]
     #[inline]
     pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
@@ -650,7 +650,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature = "either_methods")]
+    #[cfg(feature = "either")]
     #[inline]
     pub fn err(self) -> Option<Either<L, F>> {
         match self {
@@ -731,7 +731,7 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    #[cfg(feature = "either_methods")]
+    #[cfg(feature = "either")]
     #[inline]
     pub fn map_err<U, M, G>(self, f: U) -> Result<T, M, G>
     where
@@ -985,7 +985,7 @@ where
     }
 }
 
-#[cfg(feature = "either_methods")]
+#[cfg(feature = "either")]
 impl<T, L, F> Result<T, L, F>
 where
     T: Debug,
