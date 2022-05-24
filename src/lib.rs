@@ -64,7 +64,7 @@ use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
 #[cfg(feature = "nightly")]
 use core::ops::{FromResidual, Try};
-use core::result::{Result as StdResult, Result::Err as Err, Result::Ok as Ok};
+use core::result::{Result as StdResult, Result::Err, Result::Ok};
 #[cfg(feature = "either")]
 use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
@@ -879,7 +879,9 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    /// Apply a function to the contained value if it's a [`Success`], otherwise return the provided value.
+    /// Apply a function to the contained value if it's a [`Success`].
+    ///
+    /// Otherwise return the provided value.
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
@@ -906,7 +908,9 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
-    /// Apply a function to the contained value if it's a [`Success`], otherwise run one of the provided default functions.
+    /// Apply a function to the contained value if it's a [`Success`].
+    ///
+    /// Otherwise run one of the provided default functions.
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
@@ -936,6 +940,31 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn modify_error(err: Either<u32, u32>) -> Either<u32, u32> {
+    ///     match err {
+    ///         Left(l) => Left(l + 1),
+    ///         Right(f) => Right(f + 1),
+    ///     }
+    /// }
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_err(modify_error), Success(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_err(modify_error), LocalErr(1));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_err(modify_error), FatalErr(1));
+    /// ```
     #[cfg(feature = "either")]
     #[inline]
     pub fn map_err<U, M, G>(self, f: U) -> Result<T, M, G>
@@ -955,6 +984,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`].
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_local_err(|l| l + 1), Success(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_local_err(|l| l + 1), LocalErr(1));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_local_err(|l| l + 1), FatalErr(0));
+    /// ```
     #[inline]
     pub fn map_local_err<U, S>(self, f: U) -> Result<T, S, F>
     where
@@ -967,6 +1012,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`FatalErr`].
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_fatal_err(|f| f + 1), Success(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_fatal_err(|f| f + 1), LocalErr(0));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_fatal_err(|f| f + 1), FatalErr(1));
+    /// ```
     #[inline]
     pub fn map_fatal_err<U, S>(self, f: U) -> Result<T, L, S>
     where
@@ -979,6 +1040,17 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Get an iterator over the inner value in the `Result`, if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(0);
+    ///
+    /// assert_eq!(r.iter().next(), Some(&0));
+    /// ```
     #[inline]
     pub fn iter(&self) -> Iter<T> {
         let inner = match self {
@@ -989,6 +1061,25 @@ impl<T, L, F> Result<T, L, F> {
         Iter { inner }
     }
 
+    /// Get a mutable iterator over the inner value in the `Result`, if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, &str, &str> = Success(0);
+    ///
+    /// {
+    ///     let next = r.iter_mut().next();
+    ///
+    ///     assert!(next.is_some());
+    ///
+    ///     *next.unwrap() = 5;
+    /// }
+    ///
+    /// assert_eq!(r, Success(5));
+    /// ```
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<T> {
         let inner = match self {
@@ -999,6 +1090,17 @@ impl<T, L, F> Result<T, L, F> {
         IterMut { inner }
     }
 
+    /// If it's a [`Success`], replace it with `res`.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r1: Result<u32, &str, &str> = Success(0);
+    /// let r2: Result<u32, _, &str> = r1.and(LocalErr(""));
+    /// assert_eq!(r2, LocalErr(""));
+    /// ```
     #[inline]
     pub fn and<U>(self, res: Result<U, L, F>) -> Result<U, L, F> {
         match self {
@@ -1008,6 +1110,24 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`Success`], replace it with the result of `op`.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r1: Result<u32, &str, &str> = Success(0);
+    /// let r2: Result<u32, _, &str> = r1.and_then(|c| {
+    ///     if c == 0 {
+    ///         LocalErr("local")
+    ///     } else {
+    ///         FatalErr("fatal")
+    ///     }
+    /// });
+    ///
+    /// assert_eq!(r2, LocalErr("local"));
+    /// ```
     #[inline]
     pub fn and_then<U, G>(self, op: G) -> Result<U, L, F>
     where
