@@ -1,4 +1,4 @@
-//!`woah` is a Rust crate which provides the following type:
+//! `woah` is a Rust crate which provides the following type:
 //!
 //! ```text
 //! enum Result<T, L, F> {
@@ -79,13 +79,17 @@ pub mod prelude {
     //! to make `woah::Result` fully-featured, based on feature flags.
 
     // Replace `std::result::Result` with `woah::Result`.
+    //
+    // This also imports the variant names for `woah::Result`, so they can be
+    // referenced directly.
     pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Success};
-    pub use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
+    pub use core::result::Result as StdResult;
 
-    // Import the Try trait.
+    // Import the Try and FromResidual traits.
     #[cfg(feature = "nightly")]
     pub use core::ops::{FromResidual, Try};
 
+    // Import the ControlFlow struct.
     #[cfg(feature = "nightly")]
     pub use core::ops::ControlFlow;
 
@@ -612,6 +616,29 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, Success(t) if *x == *t)
     }
 
+    /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] value containing the given value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either;
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// let check: Either<_, &&str> = Either::Left(&2);
+    /// assert_eq!(x.contains_err(check), true);
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(3);
+    /// let check: Either<&&str, _> = Either::Right(&2);
+    /// assert_eq!(x.contains_err(check), false);
+    ///
+    /// let x: Result<u32, &str, &str> = Success(0);
+    /// let check: Either<&&str, &&str> = Either::Left(&"");
+    /// assert_eq!(x.contains_err(check), false);
+    /// ```
     #[cfg(feature = "either")]
     #[must_use]
     #[inline]
@@ -624,6 +651,24 @@ impl<T, L, F> Result<T, L, F> {
             || matches!((self, e), (FatalErr(err), Right(e)) if *e == *err)
     }
 
+    /// Returns `true` if the result is a [`LocalErr`] value containing the given value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// assert_eq!(x.contains_local_err(&2), true);
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(3);
+    /// assert_eq!(x.contains_local_err(&2), false);
+    ///
+    /// let x: Result<&str, u32, &str> = Success("Some error message");
+    /// assert_eq!(x.contains_local_err(&2), false);
+    /// ```
     #[must_use]
     #[inline]
     pub fn contains_local_err<E>(&self, e: &E) -> bool
@@ -633,6 +678,24 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, LocalErr(err) if *e == *err)
     }
 
+    /// Returns `true` if the result is a [`FatalErr`] value containing the given value.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(2);
+    /// assert_eq!(x.contains_fatal_err(&2), true);
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(3);
+    /// assert_eq!(x.contains_fatal_err(&2), false);
+    ///
+    /// let x: Result<&str, &str, u32> = Success("Some error message");
+    /// assert_eq!(x.contains_fatal_err(&2), false);
+    /// ```
     #[must_use]
     #[inline]
     pub fn contains_fatal_err<E>(&self, e: &E) -> bool
@@ -642,6 +705,22 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, FatalErr(err) if *e == *err)
     }
 
+    /// Convert a [`Success`] variant to an `Option::Some`, otherwise to a `None`.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.ok(), Some(2));
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// assert_eq!(x.ok(), None);
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(2);
+    /// assert_eq!(x.ok(), None);
+    /// ```
     #[inline]
     pub fn ok(self) -> Option<T> {
         match self {
@@ -650,6 +729,24 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Convert a [`LocalErr`] or [`FatalErr`] variant to an `Option<Either<_, _>>`, otherwise to a `None`.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.err(), None);
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// assert_eq!(x.err(), Some(Left(2)));
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(2);
+    /// assert_eq!(x.err(), Some(Right(2)));
+    /// ```
     #[cfg(feature = "either")]
     #[inline]
     pub fn err(self) -> Option<Either<L, F>> {
@@ -660,6 +757,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Convert a [`LocalErr`] variant to an `Option::Some`, otherwise to a `None`.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.local_err(), None);
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// assert_eq!(x.local_err(), Some(2));
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(2);
+    /// assert_eq!(x.local_err(), None);
+    /// ```
     #[inline]
     pub fn local_err(self) -> Option<L> {
         match self {
@@ -668,6 +781,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Convert a [`FatalErr`] variant to an `Option::Some`, otherwise to a `None`.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.fatal_err(), None);
+    ///
+    /// let x: Result<&str, u32, &str> = LocalErr(2);
+    /// assert_eq!(x.fatal_err(), None);
+    ///
+    /// let x: Result<&str, &str, u32> = FatalErr(2);
+    /// assert_eq!(x.fatal_err(), Some(2));
+    /// ```
     #[inline]
     pub fn fatal_err(self) -> Option<F> {
         match self {
@@ -676,6 +805,20 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Get a reference to the contained value.
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.as_ref(), Success(&0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.as_ref(), LocalErr(&0));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.as_ref(), FatalErr(&0));
+    /// ```
     #[inline]
     pub fn as_ref(&self) -> Result<&T, &L, &F> {
         match self {
@@ -685,6 +828,20 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Get a mutable reference to the contained value.
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.as_mut(), Success(&mut 0));
+    ///
+    /// let mut x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.as_mut(), LocalErr(&mut 0));
+    ///
+    /// let mut x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.as_mut(), FatalErr(&mut 0));
+    /// ```
     #[inline]
     pub fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
         match self {
@@ -694,6 +851,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map(|s| s + 1), Success(1));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map(|s| s + 1), LocalErr(0));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map(|s| s + 1), FatalErr(0));
+    /// ```
     #[inline]
     pub fn map<U, S>(self, f: U) -> Result<S, L, F>
     where
@@ -706,6 +879,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`Success`], otherwise return the provided value.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_or(5, |s| s + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_or(5, |s| s + 1), 5);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_or(5, |s| s + 1), 5);
+    /// ```
     #[inline]
     pub fn map_or<U, G>(self, default: U, f: G) -> U
     where
@@ -717,6 +906,22 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`Success`], otherwise run one of the provided default functions.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_or_else(|l| l + 3, |f| f + 2, |s| s + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_or_else(|l| l + 3, |f| f + 2, |s| s + 1), 3);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_or_else(|l| l + 3, |f| f + 2, |s| s + 1), 2);
+    /// ```
     #[inline]
     pub fn map_or_else<U, LD, FD, G>(self, default_local: LD, default_fatal: FD, f: G) -> U
     where
