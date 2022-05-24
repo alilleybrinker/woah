@@ -458,38 +458,77 @@ impl<T, L, F> Result<T, L, F> {
         self.into()
     }
 
-    /// Construct the `FatalErr` variant based on some error.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let fatal_err: Result<i64, &str, &str> = Result::from_error("a fatal error");
-    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
-    /// ```
-    #[inline]
-    pub fn from_error(err: F) -> Self {
-        FatalErr(err)
-    }
-
-    /// Construct either a `Success` or `LocalErr` variant based on a
+    /// Construct either a [`Success`] or [`LocalErr`] variant based on a
     /// `Result`.
     ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
     /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
-    /// assert_eq!(result, Ok(Err("a local error")));
+    /// let result: Result<i64, &str, &str> = Result::from_result(Ok(0));
+    /// assert_eq!(result, Success(0));
     /// ```
     #[inline]
-    pub fn from_ok(ok: StdResult<T, L>) -> Self {
+    pub fn from_result(ok: StdResult<T, L>) -> Self {
         match ok {
             Ok(t) => Success(t),
             Err(err) => LocalErr(err),
         }
+    }
+
+    /// Construct the [`Success`] variant based on some success value.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_success(0);
+    /// assert_eq!(fatal_err, Success(0));
+    /// ```
+    #[inline]
+    pub fn from_success(val: T) -> Self {
+        Success(val)
+    }
+
+    /// Construct the [`LocalErr`] variant based on some error.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_error("a fatal error");
+    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
+    /// ```
+    #[inline]
+    pub fn from_local_err(err: L) -> Self {
+        LocalErr(err)
+    }
+
+    /// Construct the [`FatalErr`] variant based on some error.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_error("a fatal error");
+    /// assert_eq!(fatal_err, FatalErr("a fatal error"));
+    /// ```
+    #[inline]
+    pub fn from_fatal_error(err: F) -> Self {
+        FatalErr(err)
     }
 
     /// Returns `true` if the result is [`Success`].
@@ -709,20 +748,22 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
     /// let x: Result<u32, &str, &str> = Success(2);
-    /// assert_eq!(x.ok(), Some(2));
+    /// assert_eq!(x.success(), Some(2));
     ///
     /// let x: Result<&str, u32, &str> = LocalErr(2);
-    /// assert_eq!(x.ok(), None);
+    /// assert_eq!(x.success(), None);
     ///
     /// let x: Result<&str, &str, u32> = FatalErr(2);
-    /// assert_eq!(x.ok(), None);
+    /// assert_eq!(x.success(), None);
     /// ```
     #[inline]
-    pub fn ok(self) -> Option<T> {
+    pub fn success(self) -> Option<T> {
         match self {
             Success(t) => Some(t),
             _ => None,
@@ -733,6 +774,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -761,6 +804,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -785,6 +830,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -806,6 +853,8 @@ impl<T, L, F> Result<T, L, F> {
     }
 
     /// Get a reference to the contained value.
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -829,6 +878,8 @@ impl<T, L, F> Result<T, L, F> {
     }
 
     /// Get a mutable reference to the contained value.
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -854,6 +905,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Apply a function to the contained value if it's a [`Success`].
     ///
     /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -885,6 +938,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -913,6 +968,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Otherwise run one of the provided default functions.
     ///
     /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -944,6 +1001,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -988,6 +1047,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`LocalErr`]: enum.Result.html#variant.LocalErr
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -1015,6 +1076,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Apply a function to the contained value if it's a [`FatalErr`].
     ///
     /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -1044,6 +1107,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -1064,6 +1129,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Get a mutable iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
     /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -1094,6 +1161,8 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// [`Success`]: enum.Result.html#variant.Success
     ///
+    /// # Example
+    ///
     /// ```
     /// use woah::prelude::*;
     ///
@@ -1113,6 +1182,8 @@ impl<T, L, F> Result<T, L, F> {
     /// If it's a [`Success`], replace it with the result of `op`.
     ///
     /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
@@ -1140,6 +1211,28 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let l: Result<u32, u32, u32> = LocalErr(1);
+    /// let f: Result<u32, u32, u32> = FatalErr(2);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or(l, f), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or(l, f), LocalErr(1));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or(l, f), FatalErr(2));
+    /// ```
     #[inline]
     pub fn or<M, G>(
         self,
@@ -1616,7 +1709,9 @@ impl<T, L, F> IntoIterator for Result<T, L, F> {
 
     #[inline]
     fn into_iter(self) -> IntoIter<T> {
-        IntoIter { inner: self.ok() }
+        IntoIter {
+            inner: self.success(),
+        }
     }
 }
 
