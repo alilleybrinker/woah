@@ -1,6 +1,6 @@
 [package]
 name = "woah"
-version = "0.3.0"
+version = "0.4.0"
 description = """
     A Result type that differentiates between local errors (which can be handled)
     and fatal errors (which cannot)
