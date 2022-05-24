@@ -64,7 +64,7 @@ use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
 #[cfg(feature = "nightly")]
 use core::ops::{FromResidual, Try};
-use core::result::{Result as StdResult, Result::Err as StdErr, Result::Ok as StdOk};
+use core::result::{Result as StdResult, Result::Err as Err, Result::Ok as Ok};
 #[cfg(feature = "either")]
 use either::Either::{self, Left, Right};
 #[cfg(feature = "serde")]
@@ -315,7 +315,7 @@ pub mod docs {
     //! use std::cmp::Ordering;
     //!
     //! match get_number() {
-    //!     StdOk(num) => println!("Got a number: {}", num),
+    //!     Ok(num) => println!("Got a number: {}", num),
     //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
     //! }
     //!
@@ -329,7 +329,7 @@ pub mod docs {
     //!         i64::default()
     //!     });
     //!
-    //!     StdOk(num)
+    //!     Ok(num)
     //! }
     //!
     //! fn compare_numbers(x: i64, y: i64) -> StdResult<StdResult<i64, LocalError>, FatalError> {
@@ -358,7 +358,7 @@ pub mod docs {
     //! # #[cfg(feature = "nightly")]
     //! # fn main() {
     //! match get_number() {
-    //!     StdOk(num) => println!("Got a number: {}", num),
+    //!     Ok(num) => println!("Got a number: {}", num),
     //!     StdResult::Err(fatal_err) => eprintln!("Fatal error: {:?}", fatal_err),
     //! }
     //! # }
@@ -377,7 +377,7 @@ pub mod docs {
     //!         i64::default()
     //!     });
     //!
-    //!     StdOk(num)
+    //!     Ok(num)
     //! }
     //!
     //! # #[cfg(feature = "nightly")]
@@ -434,9 +434,9 @@ impl<T, L, F> Try for Result<T, L, F> {
     #[inline]
     fn branch(self) -> ControlFlow<StdResult<Infallible, F>, StdResult<T, L>> {
         match self {
-            Result::Success(t) => ControlFlow::Continue(StdOk(t)),
-            Result::LocalErr(l) => ControlFlow::Continue(StdErr(l)),
-            Result::FatalErr(f) => ControlFlow::Break(StdErr(f)),
+            Result::Success(t) => ControlFlow::Continue(Ok(t)),
+            Result::LocalErr(l) => ControlFlow::Continue(Err(l)),
+            Result::FatalErr(f) => ControlFlow::Break(Err(f)),
         }
     }
 }
@@ -451,7 +451,7 @@ impl<T, L, F> Result<T, L, F> {
     /// use woah::prelude::*;
     ///
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
-    /// assert_eq!(result, StdOk(StdErr("a local error")));
+    /// assert_eq!(result, Ok(Err("a local error")));
     /// ```
     #[inline]
     pub fn into_result(self) -> StdResult<StdResult<T, L>, F> {
@@ -482,13 +482,13 @@ impl<T, L, F> Result<T, L, F> {
     /// use woah::prelude::*;
     ///
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
-    /// assert_eq!(result, StdOk(StdErr("a local error")));
+    /// assert_eq!(result, Ok(Err("a local error")));
     /// ```
     #[inline]
     pub fn from_ok(ok: StdResult<T, L>) -> Self {
         match ok {
-            StdOk(t) => Success(t),
-            StdErr(err) => LocalErr(err),
+            Ok(t) => Success(t),
+            Err(err) => LocalErr(err),
         }
     }
 
@@ -1279,9 +1279,9 @@ where
     #[inline]
     pub fn into_result_default(self) -> StdResult<T, F> {
         match self {
-            Success(t) => StdOk(t),
-            LocalErr(_) => StdOk(T::default()),
-            FatalErr(err) => StdErr(err),
+            Success(t) => Ok(t),
+            LocalErr(_) => Ok(T::default()),
+            FatalErr(err) => Err(err),
         }
     }
 }
@@ -1742,8 +1742,8 @@ fn into_try<R: Try>(cf: ControlFlow<R, R::Output>) -> R {
 impl<T, L, F> From<StdResult<T, L>> for Result<T, L, F> {
     fn from(result: StdResult<T, L>) -> Result<T, L, F> {
         match result {
-            StdOk(t) => Success(t),
-            StdErr(l) => LocalErr(l),
+            Ok(t) => Success(t),
+            Err(l) => LocalErr(l),
         }
     }
 }
@@ -1751,11 +1751,11 @@ impl<T, L, F> From<StdResult<T, L>> for Result<T, L, F> {
 impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
     fn from(result: StdResult<StdResult<T, L>, F>) -> Result<T, L, F> {
         match result {
-            StdOk(inner) => match inner {
-                StdOk(ok) => Success(ok),
-                StdErr(err) => LocalErr(err),
+            Ok(inner) => match inner {
+                Ok(ok) => Success(ok),
+                Err(err) => LocalErr(err),
             },
-            StdErr(err) => FatalErr(err),
+            Err(err) => FatalErr(err),
         }
     }
 }
@@ -1763,9 +1763,9 @@ impl<T, L, F> From<StdResult<StdResult<T, L>, F>> for Result<T, L, F> {
 impl<T, L, F> From<Result<T, L, F>> for StdResult<StdResult<T, L>, F> {
     fn from(other: Result<T, L, F>) -> StdResult<StdResult<T, L>, F> {
         match other {
-            Success(ok) => StdOk(StdOk(ok)),
-            LocalErr(err) => StdOk(StdErr(err)),
-            FatalErr(err) => StdErr(err),
+            Success(ok) => Ok(Ok(ok)),
+            LocalErr(err) => Ok(Err(err)),
+            FatalErr(err) => Err(err),
         }
     }
 }
@@ -1802,6 +1802,6 @@ where
         // Convert to a `woah::Result`.
         let result: Result<T, L, F> = result.into();
         // Wrap it for the return.
-        StdOk(result)
+        Ok(result)
     }
 }
