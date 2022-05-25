@@ -10,25 +10,26 @@ edition = "2021"
 rust-version = "1.61.0"
 categories = ["rust-patterns"]
 keywords = ["result", "error-handling"]
-repository = "https://github.com/alilleybrinker/woah/"
+repository = "https://github.com/alilleybrinker/woah"
+documentation = "https://docs.rs/woah"
 readme = "README.md"
 
 [dependencies]
+# Optional, provides methods that operate on both error variants.
 either = { version = "1.5", default-features = false, optional = true }
+# Optional, enables serialization and deserialization of `woah::Result`.
 serde = { version = "1.0.127", optional = true }
 
 [features]
+# The most features with minimal build time / size impact.
 default = ["either", "std"]
-
-# Use types from the standard library.
-#
-# If `either` is also enabled, turn on `std` for it too.
+# Use types from the standard library. If `either` is enabled, turn on `std` for it.
 std = ["either?/use_std"]
-
-# Enable all nightly-only features of the crate.
+# Enable all nightly-only features of the crate. Enable only on a nightly Rust toolchain.
 nightly = []
 
 [dev-dependencies]
+# Used in some example code.
 rand = "0.8.5"
 
 [package.metadata.docs.rs]

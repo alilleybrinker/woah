@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! `woah` is a Rust crate which provides the following type:
 //!
 //! ```text
