@@ -1246,6 +1246,26 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`LocalErr`], replace them with the given value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let l: Result<u32, u32, u32> = LocalErr(1);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or_local(l), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or_local(l), LocalErr(1));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or_local(l), FatalErr(0));
+    /// ```
     #[inline]
     pub fn or_local<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
         match self {
@@ -1255,6 +1275,26 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`FatalErr`], replace them with the given value.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let f: Result<u32, u32, u32> = FatalErr(2);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or_fatal(f), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or_fatal(f), LocalErr(0));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or_fatal(f), FatalErr(2));
+    /// ```
     #[inline]
     pub fn or_fatal<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
         match self {
@@ -1264,6 +1304,28 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate function result.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let l = |l| LocalErr(l + 1);
+    /// let f = |f| FatalErr(f + 2);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or_else(l, f), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or_else(l, f), LocalErr(1));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or_else(l, f), FatalErr(2));
+    /// ```
     #[inline]
     pub fn or_else<O, P, M, G>(self, op_local: O, op_fatal: P) -> Result<T, M, G>
     where
@@ -1277,6 +1339,26 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`LocalErr`], replace it with the appropriate function result.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let l = |l| LocalErr(l + 1);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or_else_local(l), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or_else_local(l), LocalErr(1));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or_else_local(l), FatalErr(0));
+    /// ```
     #[inline]
     pub fn or_else_local<O, M>(self, op: O) -> Result<T, M, F>
     where
@@ -1289,6 +1371,26 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// If it's a [`FatalErr`], replace it with the appropriate function result.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let f = |f| FatalErr(f + 2);
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.or_else_fatal(f), Success(0));
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.or_else_fatal(f), LocalErr(0));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.or_else_fatal(f), FatalErr(2));
+    /// ```
     #[inline]
     pub fn or_else_fatal<O, G>(self, op: O) -> Result<T, L, G>
     where
@@ -1301,14 +1403,53 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Return inner value if it's a [`Success`], or `alt` otherwise.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.unwrap_or(5), 0);
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_or(5), 5);
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.unwrap_or(5), 5);
+    /// ```
     #[inline]
-    pub fn unwrap_or(self, optb: T) -> T {
+    pub fn unwrap_or(self, alt: T) -> T {
         match self {
             Success(t) => t,
-            _ => optb,
+            _ => alt,
         }
     }
 
+    /// Return inner value if it's a [`Success`], or the appropriate function otherwise.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let l = |_| 5;
+    /// let f = |_| 10;
+    ///
+    /// let r: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(r.unwrap_or_else(l, f), 0);
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_or_else(l, f), 5);
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.unwrap_or_else(l, f), 10);
+    /// ```
     #[inline]
     pub fn unwrap_or_else<M, G>(self, local_op: M, fatal_op: G) -> T
     where
