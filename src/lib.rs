@@ -1468,6 +1468,18 @@ impl<'a, T, L, F> Result<&'a T, L, F>
 where
     T: Copy,
 {
+    /// Copy the value if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<&u32, (), ()> = Success(&0);
+    /// assert_eq!(r.copied(), Success(0));
+    /// ```
     #[inline]
     pub fn copied(self) -> Result<T, L, F> {
         match self {
@@ -1482,6 +1494,18 @@ impl<'a, T, L, F> Result<&'a mut T, L, F>
 where
     T: Copy,
 {
+    /// Copy the value if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<&u32, (), ()> = Success(&0);
+    /// assert_eq!(r.copied(), Success(0));
+    /// ```
     #[inline]
     pub fn copied(self) -> Result<T, L, F> {
         match self {
@@ -1496,6 +1520,18 @@ impl<'a, T, L, F> Result<&'a T, L, F>
 where
     T: Clone,
 {
+    /// Clone the value if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<&u32, (), ()> = Success(&0);
+    /// assert_eq!(r.cloned(), Success(0));
+    /// ```
     #[inline]
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
@@ -1510,6 +1546,18 @@ impl<'a, T, L, F> Result<&'a mut T, L, F>
 where
     T: Clone,
 {
+    /// Clone the value if it's a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<&u32, (), ()> = Success(&0);
+    /// assert_eq!(r.cloned(), Success(0));
+    /// ```
     #[inline]
     pub fn cloned(self) -> Result<T, L, F> {
         match self {
