@@ -166,7 +166,7 @@ pub mod docs {
     //! These methods try to get the contained value out, returning an `Option` in case it's
     //! another variant.
     //!
-    //! 1. [`ok`](../../enum.Result.html#method.ok)
+    //! 1. [`success`](../../enum.Result.html#method.success)
     //! 2. [`err`](../../enum.Result.html#method.err)
     //! 3. [`local_err`](../../enum.Result.html#method.local_err)
     //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
@@ -1573,6 +1573,18 @@ where
     L: Debug,
     F: Debug,
 {
+    /// Get the value if it's a [`Success`], panic otherwise.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, (), ()> = Success(0);
+    /// assert_eq!(r.unwrap(), 0);
+    /// ```
     #[inline]
     pub fn unwrap(self) -> T {
         match self {
@@ -1582,6 +1594,18 @@ where
         }
     }
 
+    /// Get the value if it's a [`Success`], panic with a `msg` otherwise.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, (), ()> = Success(0);
+    /// assert_eq!(r.expect("should be success"), 0);
+    /// ```
     #[inline]
     pub fn expect(self, msg: &str) -> T {
         match self {
@@ -1695,7 +1719,7 @@ where
     F: Into<!>,
 {
     #[inline]
-    pub fn into_ok(self) -> T {
+    pub fn into_success(self) -> T {
         match self {
             Success(t) => t,
             LocalErr(err) => err.into(),
