@@ -16,9 +16,9 @@ readme = "README.md"
 
 [dependencies]
 # Optional, provides methods that operate on both error variants.
-either = { version = "1.5", default-features = false, optional = true }
+either = { version = "1.6.1", default-features = false, optional = true }
 # Optional, enables serialization and deserialization of `woah::Result`.
-serde = { version = "1.0.127", optional = true }
+serde = { version = "1.0.137", optional = true }
 
 [features]
 # The most features with minimal build time / size impact.
