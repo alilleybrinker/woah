@@ -2114,6 +2114,41 @@ where
     }
 }
 
+impl<T, L, F> Result<Result<T, L, F>, L, F> {
+    /// Flatten a `Result` nested inside the [`Success`] variant of another `Result`.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(Success(0));
+    /// assert_eq!(x.flatten(), Success(0));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(LocalErr(1));
+    /// assert_eq!(x.flatten(), LocalErr(1));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(FatalErr(2));
+    /// assert_eq!(x.flatten(), FatalErr(2));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = LocalErr(3);
+    /// assert_eq!(x.flatten(), LocalErr(3));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = FatalErr(4);
+    /// assert_eq!(x.flatten(), FatalErr(4));
+    /// ```
+    #[inline]
+    pub fn flatten(self) -> Result<T, L, F> {
+        match self {
+            Success(inner) => inner,
+            LocalErr(err) => LocalErr(err),
+            FatalErr(err) => FatalErr(err),
+        }
+    }
+}
+
 impl<T, L, F> Result<Option<T>, L, F> {
     #[inline]
     pub fn transpose(self) -> Option<Result<T, L, F>> {
