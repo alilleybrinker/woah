@@ -41,6 +41,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Changed
 
+- **Breaking:** `or_local`, `or_fatal`, `or_else_local` and `or_else_fatal` are
+  renamed `or_local_err`, `or_fatal_err`, `or_else_local_err` and
+  `or_else_fatal_err`. They were the only four methods naming a variant without
+  the `_err` suffix the other 28 use.
 - **Breaking:** `from_fatal_error` is renamed `from_fatal_err`, so the
   constructors read `from_success` / `from_local_err` / `from_fatal_err`. Every
   other method in the crate spells this variant `fatal_err` -- 14 of them --

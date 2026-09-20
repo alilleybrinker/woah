@@ -243,10 +243,10 @@ pub mod docs {
     //! 2. [`and_then`](crate::Result::and_then)
     //! 3. [`or`](crate::Result::or)
     //! 4. [`or_else`](crate::Result::or_else)
-    //! 5. [`or_else_fatal`](crate::Result::or_else_fatal)
-    //! 6. [`or_else_local`](crate::Result::or_else_local)
-    //! 7. [`or_fatal`](crate::Result::or_fatal)
-    //! 8. [`or_local`](crate::Result::or_local)
+    //! 5. [`or_else_fatal_err`](crate::Result::or_else_fatal_err)
+    //! 6. [`or_else_local_err`](crate::Result::or_else_local_err)
+    //! 7. [`or_fatal_err`](crate::Result::or_fatal_err)
+    //! 8. [`or_local_err`](crate::Result::or_local_err)
     //!
     //! ### Unwrap the `Result`
     //!
@@ -1818,16 +1818,16 @@ impl<T, L, F> Result<T, L, F> {
     /// let l: Result<u32, u32, u32> = LocalErr(1);
     ///
     /// let r: Result<u32, u32, u32> = Success(0);
-    /// assert_eq!(r.or_local(l), Success(0));
+    /// assert_eq!(r.or_local_err(l), Success(0));
     ///
     /// let r: Result<u32, u32, u32> = LocalErr(0);
-    /// assert_eq!(r.or_local(l), LocalErr(1));
+    /// assert_eq!(r.or_local_err(l), LocalErr(1));
     ///
     /// let r: Result<u32, u32, u32> = FatalErr(0);
-    /// assert_eq!(r.or_local(l), FatalErr(0));
+    /// assert_eq!(r.or_local_err(l), FatalErr(0));
     /// ```
     #[inline]
-    pub fn or_local<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
+    pub fn or_local_err<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
         match self {
             Success(t) => Success(t),
             LocalErr(_) => res,
@@ -1847,16 +1847,16 @@ impl<T, L, F> Result<T, L, F> {
     /// let f: Result<u32, u32, u32> = FatalErr(2);
     ///
     /// let r: Result<u32, u32, u32> = Success(0);
-    /// assert_eq!(r.or_fatal(f), Success(0));
+    /// assert_eq!(r.or_fatal_err(f), Success(0));
     ///
     /// let r: Result<u32, u32, u32> = LocalErr(0);
-    /// assert_eq!(r.or_fatal(f), LocalErr(0));
+    /// assert_eq!(r.or_fatal_err(f), LocalErr(0));
     ///
     /// let r: Result<u32, u32, u32> = FatalErr(0);
-    /// assert_eq!(r.or_fatal(f), FatalErr(2));
+    /// assert_eq!(r.or_fatal_err(f), FatalErr(2));
     /// ```
     #[inline]
-    pub fn or_fatal<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
+    pub fn or_fatal_err<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
         match self {
             Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
@@ -1911,16 +1911,16 @@ impl<T, L, F> Result<T, L, F> {
     /// let l = |l| LocalErr(l + 1);
     ///
     /// let r: Result<u32, u32, u32> = Success(0);
-    /// assert_eq!(r.or_else_local(l), Success(0));
+    /// assert_eq!(r.or_else_local_err(l), Success(0));
     ///
     /// let r: Result<u32, u32, u32> = LocalErr(0);
-    /// assert_eq!(r.or_else_local(l), LocalErr(1));
+    /// assert_eq!(r.or_else_local_err(l), LocalErr(1));
     ///
     /// let r: Result<u32, u32, u32> = FatalErr(0);
-    /// assert_eq!(r.or_else_local(l), FatalErr(0));
+    /// assert_eq!(r.or_else_local_err(l), FatalErr(0));
     /// ```
     #[inline]
-    pub fn or_else_local<O, M>(self, op: O) -> Result<T, M, F>
+    pub fn or_else_local_err<O, M>(self, op: O) -> Result<T, M, F>
     where
         O: FnOnce(L) -> Result<T, M, F>,
     {
@@ -1943,16 +1943,16 @@ impl<T, L, F> Result<T, L, F> {
     /// let f = |f| FatalErr(f + 2);
     ///
     /// let r: Result<u32, u32, u32> = Success(0);
-    /// assert_eq!(r.or_else_fatal(f), Success(0));
+    /// assert_eq!(r.or_else_fatal_err(f), Success(0));
     ///
     /// let r: Result<u32, u32, u32> = LocalErr(0);
-    /// assert_eq!(r.or_else_fatal(f), LocalErr(0));
+    /// assert_eq!(r.or_else_fatal_err(f), LocalErr(0));
     ///
     /// let r: Result<u32, u32, u32> = FatalErr(0);
-    /// assert_eq!(r.or_else_fatal(f), FatalErr(2));
+    /// assert_eq!(r.or_else_fatal_err(f), FatalErr(2));
     /// ```
     #[inline]
-    pub fn or_else_fatal<O, G>(self, op: O) -> Result<T, L, G>
+    pub fn or_else_fatal_err<O, G>(self, op: O) -> Result<T, L, G>
     where
         O: FnOnce(F) -> Result<T, L, G>,
     {
