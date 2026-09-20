@@ -30,14 +30,9 @@
 #![cfg_attr(feature = "nightly", feature(try_trait_v2))]
 #![cfg_attr(feature = "nightly", feature(try_blocks))]
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
-// `never_type` stabilized in Rust 1.100. The gate stays for now so the
-// `nightly` feature still builds on older nightly toolchains; it can go once
-// `!` is usable on every nightly the crate cares about.
-#![cfg_attr(feature = "nightly", feature(never_type))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(never_type)))))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::cargo)]
@@ -301,7 +296,7 @@ pub mod docs {
     //!| Feature Name  | Channels              | Depends On         | What It Does |
     //!|:--------------|:----------------------|:-------------------|:-------------|
     //!| `default`     | Stable, Beta, Nightly | `either`           | Enables default features (currently `either` and `std`). |
-    //!| `nightly`     | Nightly               | None               | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+    //!| `nightly`     | Nightly 1.100+        | None               | Enables all nightly-only features. Requires Rust 1.100 or later, when the `!` type stabilized. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
     //!| `serde`       | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
     //!| `std`         | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library eliminates the `Termination` trait and `ExitCode` type._ |
     //!| `either`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |

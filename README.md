@@ -74,7 +74,7 @@ the `?` operator, which is less convenient.
 
 | Feature Name | Default? | Purpose |
 |:-------------|:--------|:---------|
-| `nightly`    | No      | Lets you use the `?` operator with `woah::Result`, and adds some other convenience trait impls based on unstable APIs in `std`. |
+| `nightly`    | No      | Lets you use the `?` operator with `woah::Result`, and adds some other convenience trait impls based on unstable APIs in `std`. Requires a nightly toolchain from Rust 1.100 or later. |
 | `std`        | Yes     | Uses `std` for imports, adds the `Termination` and `ExitCode` APIs, and if `either` is turned on, turns on `std` for `either` as well. |
 | `either`     | Yes     | Adds methods to `woah::Result` for working with `Either<LocalErr, FatalErr>` |
 | `serde`      | No      | Implements `Serialize` and `Deserialize` for `woah::Result` |
