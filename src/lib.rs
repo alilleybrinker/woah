@@ -2274,6 +2274,21 @@ impl<T, L, F> Result<T, L, F>
 where
     T: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`Success`] value.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<String, u32, u32> = Success(String::from("hello"));
+    /// assert_eq!(r.as_deref(), Success("hello"));
+    ///
+    /// let r: Result<String, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.as_deref(), LocalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref(&self) -> Result<&<T as Deref>::Target, &L, &F> {
         match self {
@@ -2289,6 +2304,23 @@ where
     L: Deref,
     F: Deref,
 {
+    /// Convert to a `Result` holding references to the dereferenced [`LocalErr`] and
+    /// [`FatalErr`] values.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, String, String> = LocalErr(String::from("a local error"));
+    /// assert_eq!(r.as_deref_err(), LocalErr("a local error"));
+    ///
+    /// let r: Result<u32, String, String> = FatalErr(String::from("a fatal error"));
+    /// assert_eq!(r.as_deref_err(), FatalErr("a fatal error"));
+    /// ```
     #[inline]
     pub fn as_deref_err(&self) -> Result<&T, &<L as Deref>::Target, &<F as Deref>::Target> {
         match self {
@@ -2303,6 +2335,21 @@ impl<T, L, F> Result<T, L, F>
 where
     L: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`LocalErr`] value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, String, u32> = LocalErr(String::from("a local error"));
+    /// assert_eq!(r.as_deref_local_err(), LocalErr("a local error"));
+    ///
+    /// let r: Result<u32, String, u32> = FatalErr(0);
+    /// assert_eq!(r.as_deref_local_err(), FatalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
         match self {
@@ -2317,6 +2364,21 @@ impl<T, L, F> Result<T, L, F>
 where
     F: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`FatalErr`] value.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, String> = FatalErr(String::from("a fatal error"));
+    /// assert_eq!(r.as_deref_fatal_err(), FatalErr("a fatal error"));
+    ///
+    /// let r: Result<u32, u32, String> = LocalErr(0);
+    /// assert_eq!(r.as_deref_fatal_err(), LocalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref_fatal_err(&self) -> Result<&T, &L, &<F as Deref>::Target> {
         match self {
@@ -2331,6 +2393,23 @@ impl<T, L, F> Result<T, L, F>
 where
     T: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`Success`] value.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<String, u32, u32> = Success(String::from("hello"));
+    ///
+    /// if let Success(s) = r.as_deref_mut() {
+    ///     s.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, Success(String::from("HELLO")));
+    /// ```
     #[inline]
     pub fn as_deref_mut(&mut self) -> Result<&mut <T as Deref>::Target, &mut L, &mut F> {
         match self {
@@ -2346,6 +2425,25 @@ where
     L: DerefMut,
     F: DerefMut,
 {
+    /// Convert to a `Result` holding mutable references to the dereferenced [`LocalErr`] and
+    /// [`FatalErr`] values.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, String, String> = FatalErr(String::from("a fatal error"));
+    ///
+    /// if let FatalErr(e) = r.as_deref_mut_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, FatalErr(String::from("A FATAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_err(
         &mut self,
@@ -2362,6 +2460,23 @@ impl<T, L, F> Result<T, L, F>
 where
     L: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`LocalErr`] value.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, String, u32> = LocalErr(String::from("a local error"));
+    ///
+    /// if let LocalErr(e) = r.as_deref_mut_local_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, LocalErr(String::from("A LOCAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_local_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut F> {
         match self {
@@ -2376,6 +2491,23 @@ impl<T, L, F> Result<T, L, F>
 where
     F: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`FatalErr`] value.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, u32, String> = FatalErr(String::from("a fatal error"));
+    ///
+    /// if let FatalErr(e) = r.as_deref_mut_fatal_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, FatalErr(String::from("A FATAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_fatal_err(&mut self) -> Result<&mut T, &mut L, &mut <F as Deref>::Target> {
         match self {
