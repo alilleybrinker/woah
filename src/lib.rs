@@ -492,7 +492,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, Success(0));
     /// ```
     #[inline]
-    pub fn from_success(val: T) -> Self {
+    pub const fn from_success(val: T) -> Self {
         Success(val)
     }
 
@@ -509,7 +509,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
-    pub fn from_local_err(err: L) -> Self {
+    pub const fn from_local_err(err: L) -> Self {
         LocalErr(err)
     }
 
@@ -526,7 +526,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
-    pub fn from_fatal_error(err: F) -> Self {
+    pub const fn from_fatal_error(err: F) -> Self {
         FatalErr(err)
     }
 
@@ -550,7 +550,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is ok, consider `.unwrap()` instead"]
     #[inline]
-    pub fn is_success(&self) -> bool {
+    pub const fn is_success(&self) -> bool {
         matches!(self, Success(_))
     }
 
@@ -575,7 +575,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is err, consider `.unwrap_err()` instead"]
     #[inline]
-    pub fn is_err(&self) -> bool {
+    pub const fn is_err(&self) -> bool {
         !self.is_success()
     }
 
@@ -599,7 +599,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is local_err, consider `.unwrap_local_err()` instead"]
     #[inline]
-    pub fn is_local_err(&self) -> bool {
+    pub const fn is_local_err(&self) -> bool {
         matches!(self, LocalErr(_))
     }
 
@@ -623,7 +623,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is fatal_err, consider `.unwrap_fatal_err()` instead"]
     #[inline]
-    pub fn is_fatal_err(&self) -> bool {
+    pub const fn is_fatal_err(&self) -> bool {
         matches!(self, FatalErr(_))
     }
 
@@ -1003,7 +1003,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(x.as_ref(), FatalErr(&0));
     /// ```
     #[inline]
-    pub fn as_ref(&self) -> Result<&T, &L, &F> {
+    pub const fn as_ref(&self) -> Result<&T, &L, &F> {
         match self {
             Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
@@ -1028,7 +1028,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(x.as_mut(), FatalErr(&mut 0));
     /// ```
     #[inline]
-    pub fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
+    pub const fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
         match self {
             Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
@@ -1388,7 +1388,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r.iter().next(), Some(&0));
     /// ```
     #[inline]
-    pub fn iter(&self) -> Iter<'_, T> {
+    pub const fn iter(&self) -> Iter<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
@@ -1419,7 +1419,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r, Success(5));
     /// ```
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+    pub const fn iter_mut(&mut self) -> IterMut<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
