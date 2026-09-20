@@ -41,6 +41,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Changed
 
+- **Breaking:** `from_fatal_error` is renamed `from_fatal_err`, so the
+  constructors read `from_success` / `from_local_err` / `from_fatal_err`. Every
+  other method in the crate spells this variant `fatal_err` -- 14 of them --
+  and this was the lone exception.
 - The `Termination` impl is now generic over the success type, as std's impl for
   `std::result::Result` is: any `T: Termination` works, rather than only `()`.
   This replaces the two previous impls, for `Result<(), L, F>` and
@@ -53,7 +57,7 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - **Breaking:** the crate is now on the 2024 edition.
 - The `nightly` feature now requires a nightly toolchain from Rust 1.100 or
   later, since it no longer gates the never type behind `#![feature]`.
-- `from_success`, `from_local_err`, `from_fatal_error`, `is_success`, `is_err`,
+- `from_success`, `from_local_err`, `from_fatal_err`, `is_success`, `is_err`,
   `is_local_err`, `is_fatal_err`, `as_ref`, `as_mut`, `iter` and `iter_mut` are
   now `const fn`.
 - The `rand` dev-dependency used by the examples moved from 0.8 to 0.10.

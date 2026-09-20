@@ -524,7 +524,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_error("a fatal error");
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_err("a fatal error");
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
@@ -541,11 +541,11 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_error("a fatal error");
+    /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_err("a fatal error");
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
-    pub const fn from_fatal_error(err: F) -> Self {
+    pub const fn from_fatal_err(err: F) -> Self {
         FatalErr(err)
     }
 
