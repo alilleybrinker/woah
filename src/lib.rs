@@ -2180,6 +2180,24 @@ impl<T, L, F> Result<T, L, F>
 where
     T: Default,
 {
+    /// Get the value if it's a [`Success`], or `T`'s default value otherwise.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.unwrap_or_default(), 5);
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.unwrap_or_default(), 0);
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("a fatal error");
+    /// assert_eq!(r.unwrap_or_default(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_or_default(self) -> T {
         match self {
@@ -2188,6 +2206,27 @@ where
         }
     }
 
+    /// Convert into a `Result<T, F>`, replacing a [`LocalErr`] with `T`'s default value.
+    ///
+    /// This discards the local error, on the grounds that it has been handled; only the fatal
+    /// error survives the conversion.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.into_result_default(), Ok(5));
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.into_result_default(), Ok(0));
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("a fatal error");
+    /// assert_eq!(r.into_result_default(), Err("a fatal error"));
+    /// ```
     #[inline]
     pub fn into_result_default(self) -> StdResult<T, F> {
         match self {
@@ -2204,6 +2243,23 @@ where
     L: Into<!>,
     F: Into<!>,
 {
+    /// Get the value, which must be a [`Success`] because neither error type can be constructed.
+    ///
+    /// The bounds mean this is only callable when both error types convert into the never type,
+    /// so the [`LocalErr`] and [`FatalErr`] variants cannot exist.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, !, !> = Success(5);
+    /// assert_eq!(r.into_success(), 5);
+    /// ```
     #[inline]
     pub fn into_success(self) -> T {
         match self {
@@ -2366,6 +2422,24 @@ impl<T, L, F> Result<Result<T, L, F>, L, F> {
 }
 
 impl<T, L, F> Result<Option<T>, L, F> {
+    /// Transpose a `Result` of an `Option` into an `Option` of a `Result`.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = Success(Some(5));
+    /// assert_eq!(r.transpose(), Some(Success(5)));
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = Success(None);
+    /// assert_eq!(r.transpose(), None);
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.transpose(), Some(LocalErr("a local error")));
+    /// ```
     #[inline]
     pub fn transpose(self) -> Option<Result<T, L, F>> {
         match self {
