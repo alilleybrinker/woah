@@ -36,10 +36,13 @@
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::cargo)]
-// Turn on useful warnings (make `deny` once all are resolved.)
-//#![warn(missing_docs)]
-//#![warn(missing_doc_code_examples)]
-//#![warn(private_doc_tests)]
+// Every public item is documented with an example, so this is a hard error.
+#![deny(missing_docs)]
+// These two are still off: `missing_doc_code_examples` is an unstable rustdoc
+// lint, and both it and `private_doc_tests` now live behind a `rustdoc::`
+// prefix, so the bare names would themselves warn.
+//#![warn(rustdoc::missing_doc_code_examples)]
+//#![warn(rustdoc::private_doc_tests)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
