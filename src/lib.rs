@@ -28,10 +28,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
 #![cfg_attr(feature = "nightly", feature(try_trait_v2))]
-#![cfg_attr(feature = "nightly", feature(try_blocks))]
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
@@ -2867,11 +2865,11 @@ where
             Success(x) => from_try(f(acc, x)),
             LocalErr(l) => {
                 *error = LocalErr(l);
-                ControlFlow::Break(try { acc })
+                ControlFlow::Break(R::from_output(acc))
             }
             FatalErr(f) => {
                 *error = FatalErr(f);
-                ControlFlow::Break(try { acc })
+                ControlFlow::Break(R::from_output(acc))
             }
         }))
     }
