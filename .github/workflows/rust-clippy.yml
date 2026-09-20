@@ -7,6 +7,8 @@
 # More details at https://github.com/rust-lang/rust-clippy 
 # and https://rust-lang.github.io/rust-clippy/
 
+# This workflow only reports findings to GitHub code scanning; it does not gate
+# merges. The clippy run that fails CI lives in the `lint` job of main.yml.
 name: rust-clippy analyze
 
 on:
@@ -27,8 +29,8 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        
+        uses: actions/checkout@v4
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
 
@@ -40,10 +42,12 @@ jobs:
           cargo +nightly clippy
           --all-features
           --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        # Reporting only -- a finding here must not fail the workflow, so the
+        # SARIF upload below still runs. main.yml is what gates on clippy.
         continue-on-error: true
 
       - name: Upload analysis results to GitHub
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: rust-clippy-results.sarif
           wait-for-processing: true

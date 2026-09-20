@@ -1,11 +1,70 @@
-name: Nightly Test
+name: CI
 on: [push, pull_request]
 
 jobs:
   test:
-    name: cargo test
+    name: cargo test (${{ matrix.toolchain }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1.98.0 is the MSRV declared by `rust-version` in Cargo.toml. Keep the
+        # two in sync: this job is what stops the declared MSRV from drifting.
+        toolchain: ["1.98.0", stable, beta, nightly]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: cargo test (default features)
+        run: cargo test
+
+      - name: cargo test (no_std)
+        run: cargo test --no-default-features
+
+      - name: cargo test (no_std + either)
+        run: cargo test --no-default-features --features either
+
+      - name: cargo test (serde)
+        run: cargo test --features serde
+
+      # The `nightly` feature turns on unstable compiler features, so the
+      # feature -- and therefore `--all-features` -- only builds on nightly.
+      # This is also the only job that builds the examples, which require it.
+      - name: cargo test (all features)
+        if: matrix.toolchain == 'nightly'
+        run: cargo test --all-features
+
+  lint:
+    name: clippy and rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo test --all-features
+        with:
+          components: clippy, rustfmt
+
+      - name: cargo fmt
+        run: cargo fmt --check
+
+      # `--all-targets` covers the examples too, and `-D warnings` catches the
+      # lints that `#![deny(clippy::all)]` in lib.rs does not reach.
+      - name: cargo clippy
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+  docs:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    env:
+      # Keep the docs.rs build honest: it uses nightly with all features on.
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@nightly
+
+      - name: cargo doc
+        run: cargo doc --all-features --no-deps
