@@ -33,7 +33,7 @@ fn woah_to_std() -> StdResult<(), FatalError> {
 
 /// Converts a `std::result::Result` to a `woah::Result`.
 fn std_to_woah() -> Result<(), LocalError, FatalError> {
-    let _ = returns_std_result()?;
+    returns_std_result()?;
     Success(())
 }
 

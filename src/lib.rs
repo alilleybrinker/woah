@@ -22,28 +22,25 @@
 //! [__For more details, read the `docs` module.__][docs]
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
-//! [docs]: docs/index.html "Link to the docs module"
+//! [docs]: crate::docs
 
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woah/issues/")]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Turn on the `Try` trait for both code and documentation tests.
 #![cfg_attr(feature = "nightly", feature(try_trait_v2))]
-#![cfg_attr(feature = "nightly", feature(try_blocks))]
-#![cfg_attr(feature = "nightly", feature(control_flow_enum))]
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
-#![cfg_attr(feature = "nightly", feature(never_type))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(control_flow_enum)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(never_type)))))]
 // Turn on clippy lints.
 #![deny(clippy::all)]
 #![deny(clippy::cargo)]
-// Turn on useful warnings (make `deny` once all are resolved.)
-//#![warn(missing_docs)]
-//#![warn(missing_doc_code_examples)]
-//#![warn(private_doc_tests)]
+// Every public item is documented with an example, so this is a hard error.
+#![deny(missing_docs)]
+// These two are still off: `missing_doc_code_examples` is an unstable rustdoc
+// lint, and both it and `private_doc_tests` now live behind a `rustdoc::`
+// prefix, so the bare names would themselves warn.
+//#![warn(rustdoc::missing_doc_code_examples)]
+//#![warn(rustdoc::private_doc_tests)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
@@ -52,6 +49,7 @@ use crate::Result::{FatalErr, LocalErr, Success};
 use core::convert::Infallible;
 use core::convert::{From, Into};
 use core::fmt::Debug;
+use core::hint::unreachable_unchecked;
 #[cfg(feature = "nightly")]
 use core::iter::FromIterator;
 #[cfg(feature = "nightly")]
@@ -60,7 +58,7 @@ use core::iter::Product;
 use core::iter::Sum;
 #[cfg(feature = "nightly")]
 use core::iter::TrustedLen;
-use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
+use core::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator, Iterator};
 #[cfg(feature = "nightly")]
 use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
@@ -149,139 +147,156 @@ pub mod docs {
     //!
     //! These methods, the "is" methods, return a `bool` based on what variant is present.
     //!
-    //! 1. [`is_success`](../../enum.Result.html#method.is_success)
-    //! 2. [`is_err`](../../enum.Result.html#method.is_err)
-    //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
-    //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
+    //! 1. [`is_success`](crate::Result::is_success)
+    //! 2. [`is_err`](crate::Result::is_err)
+    //! 3. [`is_local_err`](crate::Result::is_local_err)
+    //! 4. [`is_fatal_err`](crate::Result::is_fatal_err)
     //!
     //! ### See if the `Result` contains a value
     //!
     //! These methods check if the `Result` contains a particular value.
     //!
-    //! 1. [`contains`](../../enum.Result.html#method.contains)
-    //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
-    //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
-    //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
+    //! 1. [`contains`](crate::Result::contains)
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`contains_err`](crate::Result::contains_err)"
+    )]
+    //! 3. [`contains_local_err`](crate::Result::contains_local_err)
+    //! 4. [`contains_fatal_err`](crate::Result::contains_fatal_err)
     //!
     //! ### Get an `Option` if a variant is present
     //!
     //! These methods try to get the contained value out, returning an `Option` in case it's
     //! another variant.
     //!
-    //! 1. [`success`](../../enum.Result.html#method.success)
-    //! 2. [`err`](../../enum.Result.html#method.err)
-    //! 3. [`local_err`](../../enum.Result.html#method.local_err)
-    //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
+    //! 1. [`success`](crate::Result::success)
+    #![cfg_attr(feature = "either", doc = "2. [`err`](crate::Result::err)")]
+    //! 3. [`local_err`](crate::Result::local_err)
+    //! 4. [`fatal_err`](crate::Result::fatal_err)
     //!
     //! ### Reference the contained value
     //!
     //! Gets a reference (immutable or mutable) to the contained value.
     //!
-    //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
-    //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
+    //! 1. [`as_ref`](crate::Result::as_ref)
+    //! 2. [`as_mut`](crate::Result::as_mut)
     //!
     //! ### Dereference the contained value
     //!
     //! Dereferences the contained value if it implements `Deref`.
     //!
-    //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
-    //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
-    //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
-    //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
+    //! 1. [`as_deref`](crate::Result::as_deref)
+    //! 2. [`as_deref_err`](crate::Result::as_deref_err)
+    //! 3. [`as_deref_local_err`](crate::Result::as_deref_local_err)
+    //! 4. [`as_deref_fatal_err`](crate::Result::as_deref_fatal_err)
     //!
     //! Dereferences the contained value mutably if it implements `DerefMut`.
     //!
-    //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
-    //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
-    //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
-    //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
+    //! 1. [`as_deref_mut`](crate::Result::as_deref_mut)
+    //! 2. [`as_deref_mut_err`](crate::Result::as_deref_mut_err)
+    //! 3. [`as_deref_mut_local_err`](crate::Result::as_deref_mut_local_err)
+    //! 4. [`as_deref_mut_fatal_err`](crate::Result::as_deref_mut_fatal_err)
     //!
     //! ### Map over the contained value
     //!
     //! Applies some function to the contained value.
     //!
-    //! 1. [`map`](../../enum.Result.html#method.map)
-    //! 2. [`map_or`](../../enum.Result.html#method.map_or)
-    //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
+    //! 1. [`map`](crate::Result::map)
+    //! 2. [`map_or`](crate::Result::map_or)
+    //! 3. [`map_or_else`](crate::Result::map_or_else)
     //!
     //! Applies some function to the contained value, if it's a local or fatal error.
     //!
-    //! 1. [`map_err`](../../enum.Result.html#method.map_err)
-    //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
-    //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
+    #![cfg_attr(feature = "either", doc = "1. [`map_err`](crate::Result::map_err)")]
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`map_err_or`](crate::Result::map_err_or)"
+    )]
+    #![cfg_attr(
+        feature = "either",
+        doc = "3. [`map_err_or_else`](crate::Result::map_err_or_else)"
+    )]
     //!
     //! Applies some function to the contained value, if it's a local error.
     //!
-    //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
-    //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
-    //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
+    //! 1. [`map_local_err`](crate::Result::map_local_err)
+    //! 2. [`map_local_err_or`](crate::Result::map_local_err_or)
+    //! 3. [`map_local_err_or_else`](crate::Result::map_local_err_or_else)
     //!
     //! Applies some function to the contained value, if it's a fatal error.
     //!
-    //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
-    //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
-    //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
+    //! 1. [`map_fatal_err`](crate::Result::map_fatal_err)
+    //! 2. [`map_fatal_err_or`](crate::Result::map_fatal_err_or)
+    //! 3. [`map_fatal_err_or_else`](crate::Result::map_fatal_err_or_else)
     //!
     //! ### Iterate over the contained value
     //!
-    //! 1. [`iter`](../../enum.Result.html#method.iter)
-    //! 2. [`iter_mut`](../../enum.Result.html#method.iter_mut)
-    //! 3. [`into_iter`](../../enum.Result.html#impl-IntoIterator-2) (for `woah::Result`)
-    //! 4. [`into_iter`](../../enum.Result.html#impl-IntoIterator-1) (for `&woah::Result`)
-    //! 5. [`into_iter`](../../enum.Result.html#impl-IntoIterator) (for `&mut woah::Result`)
+    //! 1. [`iter`](crate::Result::iter)
+    //! 2. [`iter_mut`](crate::Result::iter_mut)
+    //! 3. [`into_iter`](crate::Result#method.into_iter-2) (for `woah::Result`)
+    //! 4. [`into_iter`](crate::Result#method.into_iter-1) (for `&woah::Result`)
+    //! 5. [`into_iter`](crate::Result#method.into_iter) (for `&mut woah::Result`)
     //!
     //! ### Compose `Result`s
     //!
-    //! 1. [`and`](../../enum.Result.html#method.and)
-    //! 2. [`and_then`](../../enum.Result.html#method.and_then)
-    //! 3. [`or`](../../enum.Result.html#method.or)
-    //! 4. [`or_else`](../../enum.Result.html#method.or_else)
-    //! 5. [`or_else_fatal`](../../enum.Result.html#method.or_else_fatal)
-    //! 6. [`or_else_local`](../../enum.Result.html#method.or_else_local)
-    //! 7. [`or_fatal`](../../enum.Result.html#method.or_fatal)
-    //! 8. [`or_local`](../../enum.Result.html#method.or_local)
+    //! 1. [`and`](crate::Result::and)
+    //! 2. [`and_then`](crate::Result::and_then)
+    //! 3. [`or`](crate::Result::or)
+    //! 4. [`or_else`](crate::Result::or_else)
+    //! 5. [`or_else_fatal`](crate::Result::or_else_fatal)
+    //! 6. [`or_else_local`](crate::Result::or_else_local)
+    //! 7. [`or_fatal`](crate::Result::or_fatal)
+    //! 8. [`or_local`](crate::Result::or_local)
     //!
     //! ### Unwrap the `Result`
     //!
-    //! 1. [`unwrap`](../../enum.Result.html#method.unwrap)
-    //! 2. [`unwrap_err`](../../enum.Result.html#method.unwrap_err)
-    //! 3. [`unwrap_fatal_err`](../../enum.Result.html#method.unwrap_fatal_err)
-    //! 4. [`unwrap_local_err`](../../enum.Result.html#method.unwrap_local_err)
-    //! 5. [`unwrap_or`](../../enum.Result.html#method.unwrap_or)
-    //! 6. [`unwrap_or_default`](../../enum.Result.html#method.unwrap_or_default)
-    //! 7. [`unwrap_or_else`](../../enum.Result.html#method.unwrap_or_else)
-    //! 8. [`expect`](../../enum.Result.html#method.expect)
-    //! 9. [`expect_err`](../../enum.Result.html#method.expect_err)
-    //! 10. [`expect_fatal_err`](../../enum.Result.html#method.expect_fatal_err)
-    //! 11. [`expect_local_err`](../../enum.Result.html#method.expect_local_err)
+    //! 1. [`unwrap`](crate::Result::unwrap)
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`unwrap_err`](crate::Result::unwrap_err)"
+    )]
+    //! 3. [`unwrap_fatal_err`](crate::Result::unwrap_fatal_err)
+    //! 4. [`unwrap_local_err`](crate::Result::unwrap_local_err)
+    //! 5. [`unwrap_or`](crate::Result::unwrap_or)
+    //! 6. [`unwrap_or_default`](crate::Result::unwrap_or_default)
+    //! 7. [`unwrap_or_else`](crate::Result::unwrap_or_else)
+    //! 8. [`expect`](crate::Result::expect)
+    #![cfg_attr(
+        feature = "either",
+        doc = "9. [`expect_err`](crate::Result::expect_err)"
+    )]
+    //! 10. [`expect_fatal_err`](crate::Result::expect_fatal_err)
+    //! 11. [`expect_local_err`](crate::Result::expect_local_err)
     //!
     //! ### Copy or clone the contained value
     //!
-    //! 1. [`cloned`](../../enum.Result.html#method.cloned) (for `&woah::Result`)
-    //! 2. [`cloned`](../../enum.Result.html#method.cloned-1) (for `&mut woah::Result`)
-    //! 1. [`copied`](../../enum.Result.html#method.copied) (for `&woah::Result`)
-    //! 2. [`copied`](../../enum.Result.html#method.copied-1) (for `&mut woah::Result`)
+    //! 1. [`cloned`](crate::Result::cloned) (for `&woah::Result`)
+    //! 2. [`cloned`](crate::Result#method.cloned-1) (for `&mut woah::Result`)
+    //! 1. [`copied`](crate::Result::copied) (for `&woah::Result`)
+    //! 2. [`copied`](crate::Result#method.copied-1) (for `&mut woah::Result`)
     //!
     //! ### Transpose when holding an `Option`
     //!
-    //! 1. [`transpose`](../../enum.Result.html#method.transpose)
+    //! 1. [`transpose`](crate::Result::transpose)
     //!
     //! ### Convert to and from a `std::result::Result`
     //!
-    //! 1. [`into_result`](../../enum.Result.html#method.into_result)
-    //! 1. [`into_result_default`](../../enum.Result.html#method.into_result_default)
+    //! 1. [`into_result`](crate::Result::into_result)
+    //! 1. [`into_result_default`](crate::Result::into_result_default)
+    //! 1. [`into_result_merged`](crate::Result::into_result_merged)
     //!
     //! ### Use `woah::Result` with the question mark operator
     //!
-    //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with `nightly` feature or `try_trait` feature)
+    //! 1. [`Try` impl](crate::Result#trait-implementations) (nightly-only, with the `nightly` feature)
     //!
     //! ### Use `woah::Result` as the return type of `main`
     //!
-    //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (nightly-only, with `nightly` feature, or `termination_trait` and `std` features)
+    //! 1. [`Termination` impl](crate::Result#trait-implementations) (with the `std` feature; the
+    //!    impl for `Result<!, L, F>` additionally needs the `nightly` feature)
     //!
     //! ### Build a `woah::Result` from an iterator
     //!
-    //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with `nightly` feature, or `from_iterator_trait` feature)
+    //! 1. [`FromIterator` impl](crate::Result#trait-implementations) (nightly-only, with the `nightly` feature)
     //!
     //! ## Features
     //!
@@ -300,7 +315,7 @@ pub mod docs {
     //!| Feature Name  | Channels              | Depends On         | What It Does |
     //!|:--------------|:----------------------|:-------------------|:-------------|
     //!| `default`     | Stable, Beta, Nightly | `either`           | Enables default features (currently `either` and `std`). |
-    //!| `nightly`     | Nightly               | None               | Enables all nightly-only features. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
+    //!| `nightly`     | Nightly 1.100+        | None               | Enables all nightly-only features. Requires Rust 1.100 or later, when the `!` type stabilized. __This feature is permanently unstable, and changes to the APIs enabled by this feature are never considered breaking changes.__ |
     //!| `serde`       | Stable, Beta, Nightly | None               | Implements `serde::Serialize` and `serde::Deserialize` for `woah::Result`. |
     //!| `std`         | Stable, Beta, Nightly | None               | Use the standard library. Turn off to make the crate `no_std` compatible. _Turning off the standard library eliminates the `Termination` trait and `ExitCode` type._ |
     //!| `either`      | Stable, Beta, Nightly | None               | Adds the `either` crate as a dependency and provides convenience methods for operating on `Either<LocalErr, FatalErr>`. |
@@ -403,7 +418,7 @@ pub mod docs {
 
 /// A type representing success (`Success`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 ///
-/// See the [`woah`](index.html) top-level documentation for details.
+/// See the [`woah`](crate) top-level documentation for details.
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 #[must_use = "this `Result` may be a `LocalErr`, which should be handled, or a `FatalErr`, which should be propagated"]
 pub enum Result<T, L, F> {
@@ -463,8 +478,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Construct either a [`Success`] or [`LocalErr`] variant based on a
     /// `Result`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -484,7 +499,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Construct the [`Success`] variant based on some success value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -495,13 +510,13 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, Success(0));
     /// ```
     #[inline]
-    pub fn from_success(val: T) -> Self {
+    pub const fn from_success(val: T) -> Self {
         Success(val)
     }
 
     /// Construct the [`LocalErr`] variant based on some error.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -512,13 +527,13 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
-    pub fn from_local_err(err: L) -> Self {
+    pub const fn from_local_err(err: L) -> Self {
         LocalErr(err)
     }
 
     /// Construct the [`FatalErr`] variant based on some error.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -529,13 +544,13 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
     #[inline]
-    pub fn from_fatal_error(err: F) -> Self {
+    pub const fn from_fatal_error(err: F) -> Self {
         FatalErr(err)
     }
 
     /// Returns `true` if the result is [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -553,14 +568,14 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is ok, consider `.unwrap()` instead"]
     #[inline]
-    pub fn is_success(&self) -> bool {
+    pub const fn is_success(&self) -> bool {
         matches!(self, Success(_))
     }
 
     /// Returns `true` if the result is [`LocalErr`] or [`FatalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -578,13 +593,13 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is err, consider `.unwrap_err()` instead"]
     #[inline]
-    pub fn is_err(&self) -> bool {
+    pub const fn is_err(&self) -> bool {
         !self.is_success()
     }
 
     /// Returns `true` if the result is [`LocalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -602,13 +617,13 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is local_err, consider `.unwrap_local_err()` instead"]
     #[inline]
-    pub fn is_local_err(&self) -> bool {
+    pub const fn is_local_err(&self) -> bool {
         matches!(self, LocalErr(_))
     }
 
     /// Returns `true` if the result is [`FatalErr`].
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -626,13 +641,148 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     #[must_use = "if you intended to assert that this is fatal_err, consider `.unwrap_fatal_err()` instead"]
     #[inline]
-    pub fn is_fatal_err(&self) -> bool {
+    pub const fn is_fatal_err(&self) -> bool {
         matches!(self, FatalErr(_))
+    }
+
+    /// Returns `true` if the result is a [`Success`] whose value matches a predicate.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.is_success_and(|t| t > 1), true);
+    ///
+    /// let x: Result<u32, &str, &str> = Success(0);
+    /// assert_eq!(x.is_success_and(|t| t > 1), false);
+    ///
+    /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
+    /// assert_eq!(x.is_success_and(|t| t > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_success_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(T) -> bool,
+    {
+        match self {
+            Success(t) => f(t),
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] whose value matches a
+    /// predicate.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn is_big(err: Either<u32, u32>) -> bool {
+    ///     match err {
+    ///         Left(l) => l > 1,
+    ///         Right(f) => f > 1,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_err_and(is_big), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_err_and(is_big), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.is_err_and(is_big), false);
+    ///
+    /// let x: Result<&str, u32, u32> = Success("all good");
+    /// assert_eq!(x.is_err_and(is_big), false);
+    /// ```
+    #[cfg(feature = "either")]
+    #[must_use]
+    #[inline]
+    pub fn is_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(Either<L, F>) -> bool,
+    {
+        match self {
+            Success(_) => false,
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
+    /// Returns `true` if the result is a [`LocalErr`] whose value matches a predicate.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), true);
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), false);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_local_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(L) -> bool,
+    {
+        match self {
+            LocalErr(err) => f(err),
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if the result is a [`FatalErr`] whose value matches a predicate.
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), false);
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_fatal_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(F) -> bool,
+    {
+        match self {
+            FatalErr(err) => f(err),
+            _ => false,
+        }
     }
 
     /// Returns `true` if the result is a [`Success`] value containing the given value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Examples
     ///
@@ -659,8 +809,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] value containing the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Examples
     ///
@@ -694,7 +844,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`LocalErr`] value containing the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Examples
     ///
@@ -721,7 +871,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`FatalErr`] value containing the given value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Examples
     ///
@@ -748,7 +898,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`Success`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -774,8 +924,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`LocalErr`] or [`FatalErr`] variant to an `Option<Either<_, _>>`, otherwise to a `None`.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -804,7 +954,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`LocalErr`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -830,7 +980,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`FatalErr`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -871,7 +1021,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(x.as_ref(), FatalErr(&0));
     /// ```
     #[inline]
-    pub fn as_ref(&self) -> Result<&T, &L, &F> {
+    pub const fn as_ref(&self) -> Result<&T, &L, &F> {
         match self {
             Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
@@ -896,7 +1046,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(x.as_mut(), FatalErr(&mut 0));
     /// ```
     #[inline]
-    pub fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
+    pub const fn as_mut(&mut self) -> Result<&mut T, &mut L, &mut F> {
         match self {
             Success(t) => Success(t),
             LocalErr(err) => LocalErr(err),
@@ -906,7 +1056,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -938,7 +1088,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// Otherwise return the provided value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -969,7 +1119,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// Otherwise run one of the provided default functions.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1001,8 +1151,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1045,9 +1195,102 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], or return
+    /// a default.
+    ///
+    /// **The [`Success`] value is discarded.** The default stands in for it, so the success value
+    /// never reaches the caller. Use [`map_err_or_else`] to map it instead of dropping it.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_err_or_else`]: crate::Result::map_err_or_else
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn size(err: Either<u32, u32>) -> u32 {
+    ///     match err {
+    ///         Left(l) => l + 1,
+    ///         Right(f) => f + 2,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_err_or(5, size), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_err_or(5, size), 2);
+    ///
+    /// // The success value is discarded; only the default comes back.
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_err_or(5, size), 5);
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn map_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(Either<L, F>) -> U,
+    {
+        match self {
+            Success(_) => default,
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
+    ///
+    /// Otherwise run the provided default function on the [`Success`] value. Unlike
+    /// [`map_err_or`], nothing is discarded: every variant reaches a function.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_err_or`]: crate::Result::map_err_or
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn size(err: Either<u32, u32>) -> u32 {
+    ///     match err {
+    ///         Left(l) => l + 1,
+    ///         Right(f) => f + 2,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 3);
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn map_err_or_else<U, SD, G>(self, default_success: SD, f: G) -> U
+    where
+        SD: FnOnce(T) -> U,
+        G: FnOnce(Either<L, F>) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
     /// Apply a function to the contained value if it's a [`LocalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1075,9 +1318,98 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`], or return a default.
+    ///
+    /// **A [`FatalErr`] is discarded.** The default stands in for both of the other variants, so
+    /// a fatal error and its payload are dropped and the caller cannot tell that case apart from
+    /// a [`Success`]. Since the point of this crate is that fatal errors do not get swallowed,
+    /// this is worth a second look: prefer [`map_local_err_or_else`], which gives each variant
+    /// its own function, unless the default really is right for a fatal error too.
+    ///
+    #[cfg_attr(
+        feature = "either",
+        doc = "[`map_err_or`] is the other way to keep the fatal error, mapping both errors with",
+        doc = "one function.",
+        doc = "",
+        doc = "[`map_err_or`]: crate::Result::map_err_or"
+    )]
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_local_err_or_else`]: crate::Result::map_local_err_or_else
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 1);
+    ///
+    /// // The fatal error is gone, and gives the same answer as a success.
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 5);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 5);
+    /// ```
+    #[inline]
+    pub fn map_local_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(L) -> U,
+    {
+        match self {
+            LocalErr(err) => f(err),
+            _ => default,
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`].
+    ///
+    /// Otherwise run one of the provided default functions. Unlike [`map_local_err_or`], nothing
+    /// is discarded: the [`Success`] and [`FatalErr`] variants each get their own function.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_local_err_or`]: crate::Result::map_local_err_or
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 3);
+    /// ```
+    #[inline]
+    pub fn map_local_err_or_else<U, SD, FD, G>(
+        self,
+        default_success: SD,
+        default_fatal: FD,
+        f: G,
+    ) -> U
+    where
+        SD: FnOnce(T) -> U,
+        FD: FnOnce(F) -> U,
+        G: FnOnce(L) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => f(err),
+            FatalErr(err) => default_fatal(err),
+        }
+    }
+
     /// Apply a function to the contained value if it's a [`FatalErr`].
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1105,9 +1437,234 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`FatalErr`], or return a default.
+    ///
+    /// **A [`LocalErr`] is discarded.** The default stands in for both of the other variants, so
+    /// a local error and its payload are dropped and the caller cannot tell that case apart from
+    /// a [`Success`]. A local error is the handleable kind, so losing it is less serious than
+    /// losing a fatal one, but it is still information the caller does not get back. Use
+    /// [`map_fatal_err_or_else`] to give each variant its own function.
+    ///
+    #[cfg_attr(
+        feature = "either",
+        doc = "[`map_err_or`] maps both errors with one function instead.",
+        doc = "",
+        doc = "[`map_err_or`]: crate::Result::map_err_or"
+    )]
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_fatal_err_or_else`]: crate::Result::map_fatal_err_or_else
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 1);
+    ///
+    /// // The local error is gone, and gives the same answer as a success.
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 5);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 5);
+    /// ```
+    #[inline]
+    pub fn map_fatal_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(F) -> U,
+    {
+        match self {
+            FatalErr(err) => f(err),
+            _ => default,
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`FatalErr`].
+    ///
+    /// Otherwise run one of the provided default functions. Unlike [`map_fatal_err_or`], nothing
+    /// is discarded: the [`Success`] and [`LocalErr`] variants each get their own function.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_fatal_err_or`]: crate::Result::map_fatal_err_or
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 3);
+    /// ```
+    #[inline]
+    pub fn map_fatal_err_or_else<U, SD, LD, G>(
+        self,
+        default_success: SD,
+        default_local: LD,
+        f: G,
+    ) -> U
+    where
+        SD: FnOnce(T) -> U,
+        LD: FnOnce(L) -> U,
+        G: FnOnce(F) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => default_local(err),
+            FatalErr(err) => f(err),
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`Success`], without modifying it.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.inspect(|t| seen = Some(*t)), Success(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(1);
+    /// assert_eq!(x.inspect(|t| seen = Some(*t)), LocalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&T),
+    {
+        if let Success(t) = &self {
+            f(t);
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], without
+    /// modifying it.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(1);
+    /// let x = x.inspect_err(|e| {
+    ///     seen = Some(match e {
+    ///         Left(l) => *l,
+    ///         Right(f) => *f,
+    ///     })
+    /// });
+    ///
+    /// assert_eq!(x, FatalErr(1));
+    /// assert_eq!(seen, Some(1));
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.inspect_err(|_| seen = None), Success(0));
+    /// assert_eq!(seen, Some(1));
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn inspect_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(Either<&L, &F>),
+    {
+        match &self {
+            Success(_) => {}
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`], without modifying it.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.inspect_local_err(|l| seen = Some(*l)), LocalErr(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(1);
+    /// assert_eq!(x.inspect_local_err(|l| seen = Some(*l)), FatalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect_local_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&L),
+    {
+        if let LocalErr(err) = &self {
+            f(err);
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`FatalErr`], without modifying it.
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.inspect_fatal_err(|f| seen = Some(*f)), FatalErr(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(1);
+    /// assert_eq!(x.inspect_fatal_err(|f| seen = Some(*f)), LocalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect_fatal_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&F),
+    {
+        if let FatalErr(err) = &self {
+            f(err);
+        }
+
+        self
+    }
+
     /// Get an iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1119,7 +1676,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r.iter().next(), Some(&0));
     /// ```
     #[inline]
-    pub fn iter(&self) -> Iter<T> {
+    pub const fn iter(&self) -> Iter<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
@@ -1130,7 +1687,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Get a mutable iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1150,7 +1707,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r, Success(5));
     /// ```
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<T> {
+    pub const fn iter_mut(&mut self) -> IterMut<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
@@ -1161,7 +1718,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`Success`], replace it with `res`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1183,7 +1740,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`Success`], replace it with the result of `op`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1215,8 +1772,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1250,7 +1807,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`], replace them with the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1279,7 +1836,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`FatalErr`], replace them with the given value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1308,8 +1865,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate function result.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1343,7 +1900,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`], replace it with the appropriate function result.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1375,7 +1932,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`FatalErr`], replace it with the appropriate function result.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1407,7 +1964,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return inner value if it's a [`Success`], or `alt` otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1433,7 +1990,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return inner value if it's a [`Success`], or the appropriate function otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1466,13 +2023,13 @@ impl<T, L, F> Result<T, L, F> {
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F>
+impl<T, L, F> Result<&T, L, F>
 where
     T: Copy,
 {
     /// Copy the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1492,13 +2049,13 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F>
+impl<T, L, F> Result<&mut T, L, F>
 where
     T: Copy,
 {
     /// Copy the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1518,13 +2075,13 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F>
+impl<T, L, F> Result<&T, L, F>
 where
     T: Clone,
 {
     /// Clone the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1544,13 +2101,13 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F>
+impl<T, L, F> Result<&mut T, L, F>
 where
     T: Clone,
 {
     /// Clone the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1577,7 +2134,7 @@ where
 {
     /// Get the value if it's a [`Success`], panic otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1598,7 +2155,7 @@ where
 
     /// Get the value if it's a [`Success`], panic with a `msg` otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1625,6 +2182,23 @@ where
     L: Debug,
     F: Debug,
 {
+    /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic otherwise.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_err(), Left(0));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(1);
+    /// assert_eq!(r.unwrap_err(), Right(1));
+    /// ```
     #[inline]
     pub fn unwrap_err(self) -> Either<L, F> {
         match self {
@@ -1634,6 +2208,20 @@ where
         }
     }
 
+    /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic with a `msg` otherwise.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::Right;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.expect_err("should be an error"), Right(0));
+    /// ```
     #[inline]
     pub fn expect_err(self, msg: &str) -> Either<L, F> {
         match self {
@@ -1649,6 +2237,22 @@ where
     T: Debug,
     F: Debug,
 {
+    /// Get the error if it's a [`LocalErr`], panic otherwise.
+    ///
+    /// This panics on a [`FatalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_local_err(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_local_err(self) -> L {
         match self {
@@ -1658,6 +2262,22 @@ where
         }
     }
 
+    /// Get the error if it's a [`LocalErr`], panic with a `msg` otherwise.
+    ///
+    /// This panics on a [`FatalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.expect_local_err("should be a local error"), 0);
+    /// ```
     #[inline]
     pub fn expect_local_err(self, msg: &str) -> L {
         match self {
@@ -1673,6 +2293,22 @@ where
     T: Debug,
     L: Debug,
 {
+    /// Get the error if it's a [`FatalErr`], panic otherwise.
+    ///
+    /// This panics on a [`LocalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.unwrap_fatal_err(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_fatal_err(self) -> F {
         match self {
@@ -1682,6 +2318,22 @@ where
         }
     }
 
+    /// Get the error if it's a [`FatalErr`], panic with a `msg` otherwise.
+    ///
+    /// This panics on a [`LocalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.expect_fatal_err("should be a fatal error"), 0);
+    /// ```
     #[inline]
     pub fn expect_fatal_err(self, msg: &str) -> F {
         match self {
@@ -1691,11 +2343,149 @@ where
         }
     }
 }
+impl<T, L, F> Result<T, L, F> {
+    /// Return the contained [`Success`] value, without checking that the value is a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`LocalErr`] or [`FatalErr`] is undefined behavior.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(0);
+    /// assert_eq!(unsafe { x.unwrap_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_unchecked(self) -> T {
+        match self {
+            Success(t) => t,
+            // SAFETY: the caller guarantees this is a `Success`.
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`LocalErr`] or [`FatalErr`] value, without checking that the value
+    /// is one of them.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] is undefined behavior.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_err_unchecked() }, Left(0));
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(1);
+    /// assert_eq!(unsafe { x.unwrap_err_unchecked() }, Right(1));
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub unsafe fn unwrap_err_unchecked(self) -> Either<L, F> {
+        match self {
+            LocalErr(err) => Left(err),
+            FatalErr(err) => Right(err),
+            // SAFETY: the caller guarantees this is a `LocalErr` or a `FatalErr`.
+            Success(_) => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`LocalErr`] value, without checking that the value is a [`LocalErr`].
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] or [`FatalErr`] is undefined behavior.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_local_err_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_local_err_unchecked(self) -> L {
+        match self {
+            LocalErr(err) => err,
+            // SAFETY: the caller guarantees this is a `LocalErr`.
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`FatalErr`] value, without checking that the value is a [`FatalErr`].
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] or [`LocalErr`] is undefined behavior.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_fatal_err_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_fatal_err_unchecked(self) -> F {
+        match self {
+            FatalErr(err) => err,
+            // SAFETY: the caller guarantees this is a `FatalErr`.
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+}
 
 impl<T, L, F> Result<T, L, F>
 where
     T: Default,
 {
+    /// Get the value if it's a [`Success`], or `T`'s default value otherwise.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.unwrap_or_default(), 5);
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.unwrap_or_default(), 0);
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("a fatal error");
+    /// assert_eq!(r.unwrap_or_default(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_or_default(self) -> T {
         match self {
@@ -1704,11 +2494,104 @@ where
         }
     }
 
+    /// Convert into a `Result<T, F>`, replacing a [`LocalErr`] with `T`'s default value.
+    ///
+    /// This discards the local error, on the grounds that it has been handled; only the fatal
+    /// error survives the conversion.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.into_result_default(), Ok(5));
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.into_result_default(), Ok(0));
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("a fatal error");
+    /// assert_eq!(r.into_result_default(), Err("a fatal error"));
+    /// ```
     #[inline]
     pub fn into_result_default(self) -> StdResult<T, F> {
         match self {
             Success(t) => Ok(t),
             LocalErr(_) => Ok(T::default()),
+            FatalErr(err) => Err(err),
+        }
+    }
+}
+
+impl<T, L, F> Result<T, L, F>
+where
+    F: From<L>,
+{
+    /// Convert into a `Result<T, F>`, merging the two error channels into one.
+    ///
+    /// The [`LocalErr`] value is converted into the fatal error type, so both errors come back
+    /// as a single `Err`. When the two error types are the same, as in
+    /// `woah::Result<T, E, E>`, that conversion is the identity and this is simply a way to
+    /// stop distinguishing the two.
+    ///
+    /// This is the counterpart to [`into_result_default`], which drops the local error and
+    /// substitutes `T`'s default instead of escalating it. It is not [`flatten`], which removes
+    /// a layer of nesting rather than collapsing the error channels.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`into_result_default`]: crate::Result::into_result_default
+    /// [`flatten`]: crate::Result::flatten
+    ///
+    /// # Example
+    ///
+    /// With one error type in both channels there is nothing to convert:
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.into_result_merged(), Ok(5));
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("an error");
+    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("an error");
+    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    /// ```
+    ///
+    /// With two error types, the local one escalates through its `From` impl:
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// #[derive(Debug, PartialEq)]
+    /// struct Timeout;
+    ///
+    /// #[derive(Debug, PartialEq)]
+    /// enum Fatal {
+    ///     GaveUp,
+    ///     Unreachable,
+    /// }
+    ///
+    /// impl From<Timeout> for Fatal {
+    ///     fn from(_: Timeout) -> Fatal {
+    ///         Fatal::GaveUp
+    ///     }
+    /// }
+    ///
+    /// let r: Result<u32, Timeout, Fatal> = LocalErr(Timeout);
+    /// assert_eq!(r.into_result_merged(), Err(Fatal::GaveUp));
+    ///
+    /// let r: Result<u32, Timeout, Fatal> = FatalErr(Fatal::Unreachable);
+    /// assert_eq!(r.into_result_merged(), Err(Fatal::Unreachable));
+    /// ```
+    #[inline]
+    pub fn into_result_merged(self) -> StdResult<T, F> {
+        match self {
+            Success(t) => Ok(t),
+            LocalErr(err) => Err(F::from(err)),
             FatalErr(err) => Err(err),
         }
     }
@@ -1720,6 +2603,23 @@ where
     L: Into<!>,
     F: Into<!>,
 {
+    /// Get the value, which must be a [`Success`] because neither error type can be constructed.
+    ///
+    /// The bounds mean this is only callable when both error types convert into the never type,
+    /// so the [`LocalErr`] and [`FatalErr`] variants cannot exist.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, !, !> = Success(5);
+    /// assert_eq!(r.into_success(), 5);
+    /// ```
     #[inline]
     pub fn into_success(self) -> T {
         match self {
@@ -1734,6 +2634,21 @@ impl<T, L, F> Result<T, L, F>
 where
     T: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`Success`] value.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<String, u32, u32> = Success(String::from("hello"));
+    /// assert_eq!(r.as_deref(), Success("hello"));
+    ///
+    /// let r: Result<String, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.as_deref(), LocalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref(&self) -> Result<&<T as Deref>::Target, &L, &F> {
         match self {
@@ -1749,6 +2664,23 @@ where
     L: Deref,
     F: Deref,
 {
+    /// Convert to a `Result` holding references to the dereferenced [`LocalErr`] and
+    /// [`FatalErr`] values.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, String, String> = LocalErr(String::from("a local error"));
+    /// assert_eq!(r.as_deref_err(), LocalErr("a local error"));
+    ///
+    /// let r: Result<u32, String, String> = FatalErr(String::from("a fatal error"));
+    /// assert_eq!(r.as_deref_err(), FatalErr("a fatal error"));
+    /// ```
     #[inline]
     pub fn as_deref_err(&self) -> Result<&T, &<L as Deref>::Target, &<F as Deref>::Target> {
         match self {
@@ -1763,6 +2695,21 @@ impl<T, L, F> Result<T, L, F>
 where
     L: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`LocalErr`] value.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, String, u32> = LocalErr(String::from("a local error"));
+    /// assert_eq!(r.as_deref_local_err(), LocalErr("a local error"));
+    ///
+    /// let r: Result<u32, String, u32> = FatalErr(0);
+    /// assert_eq!(r.as_deref_local_err(), FatalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref_local_err(&self) -> Result<&T, &<L as Deref>::Target, &F> {
         match self {
@@ -1777,6 +2724,21 @@ impl<T, L, F> Result<T, L, F>
 where
     F: Deref,
 {
+    /// Convert to a `Result` holding a reference to the dereferenced [`FatalErr`] value.
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, String> = FatalErr(String::from("a fatal error"));
+    /// assert_eq!(r.as_deref_fatal_err(), FatalErr("a fatal error"));
+    ///
+    /// let r: Result<u32, u32, String> = LocalErr(0);
+    /// assert_eq!(r.as_deref_fatal_err(), LocalErr(&0));
+    /// ```
     #[inline]
     pub fn as_deref_fatal_err(&self) -> Result<&T, &L, &<F as Deref>::Target> {
         match self {
@@ -1791,6 +2753,23 @@ impl<T, L, F> Result<T, L, F>
 where
     T: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`Success`] value.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<String, u32, u32> = Success(String::from("hello"));
+    ///
+    /// if let Success(s) = r.as_deref_mut() {
+    ///     s.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, Success(String::from("HELLO")));
+    /// ```
     #[inline]
     pub fn as_deref_mut(&mut self) -> Result<&mut <T as Deref>::Target, &mut L, &mut F> {
         match self {
@@ -1806,6 +2785,25 @@ where
     L: DerefMut,
     F: DerefMut,
 {
+    /// Convert to a `Result` holding mutable references to the dereferenced [`LocalErr`] and
+    /// [`FatalErr`] values.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, String, String> = FatalErr(String::from("a fatal error"));
+    ///
+    /// if let FatalErr(e) = r.as_deref_mut_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, FatalErr(String::from("A FATAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_err(
         &mut self,
@@ -1822,6 +2820,23 @@ impl<T, L, F> Result<T, L, F>
 where
     L: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`LocalErr`] value.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, String, u32> = LocalErr(String::from("a local error"));
+    ///
+    /// if let LocalErr(e) = r.as_deref_mut_local_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, LocalErr(String::from("A LOCAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_local_err(&mut self) -> Result<&mut T, &mut <L as Deref>::Target, &mut F> {
         match self {
@@ -1836,6 +2851,23 @@ impl<T, L, F> Result<T, L, F>
 where
     F: DerefMut,
 {
+    /// Convert to a `Result` holding a mutable reference to the dereferenced [`FatalErr`] value.
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut r: Result<u32, u32, String> = FatalErr(String::from("a fatal error"));
+    ///
+    /// if let FatalErr(e) = r.as_deref_mut_fatal_err() {
+    ///     e.make_ascii_uppercase();
+    /// }
+    ///
+    /// assert_eq!(r, FatalErr(String::from("A FATAL ERROR")));
+    /// ```
     #[inline]
     pub fn as_deref_mut_fatal_err(&mut self) -> Result<&mut T, &mut L, &mut <F as Deref>::Target> {
         match self {
@@ -1846,7 +2878,64 @@ where
     }
 }
 
+impl<T, L, F> Result<Result<T, L, F>, L, F> {
+    /// Flatten a `Result` nested inside the [`Success`] variant of another `Result`.
+    ///
+    /// This removes a layer of nesting. To collapse a single `Result`'s two error channels into
+    /// one instead, see [`into_result_merged`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`into_result_merged`]: crate::Result::into_result_merged
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(Success(0));
+    /// assert_eq!(x.flatten(), Success(0));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(LocalErr(1));
+    /// assert_eq!(x.flatten(), LocalErr(1));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = Success(FatalErr(2));
+    /// assert_eq!(x.flatten(), FatalErr(2));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = LocalErr(3);
+    /// assert_eq!(x.flatten(), LocalErr(3));
+    ///
+    /// let x: Result<Result<u32, u32, u32>, u32, u32> = FatalErr(4);
+    /// assert_eq!(x.flatten(), FatalErr(4));
+    /// ```
+    #[inline]
+    pub fn flatten(self) -> Result<T, L, F> {
+        match self {
+            Success(inner) => inner,
+            LocalErr(err) => LocalErr(err),
+            FatalErr(err) => FatalErr(err),
+        }
+    }
+}
+
 impl<T, L, F> Result<Option<T>, L, F> {
+    /// Transpose a `Result` of an `Option` into an `Option` of a `Result`.
+    ///
+    /// [`Success`]: crate::Result::Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = Success(Some(5));
+    /// assert_eq!(r.transpose(), Some(Success(5)));
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = Success(None);
+    /// assert_eq!(r.transpose(), None);
+    ///
+    /// let r: Result<Option<u32>, &str, &str> = LocalErr("a local error");
+    /// assert_eq!(r.transpose(), Some(LocalErr("a local error")));
+    /// ```
     #[inline]
     pub fn transpose(self) -> Option<Result<T, L, F>> {
         match self {
@@ -2015,7 +3104,27 @@ impl<T> Iterator for IntoIter<T> {
     fn next(&mut self) -> Option<T> {
         self.inner.take()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = if self.inner.is_some() { 1 } else { 0 };
+        (n, Some(n))
+    }
 }
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<T> {
+        self.inner.take()
+    }
+}
+
+impl<T> ExactSizeIterator for IntoIter<T> {}
+
+impl<T> FusedIterator for IntoIter<T> {}
+
+#[cfg(feature = "nightly")]
+unsafe impl<T> TrustedLen for IntoIter<T> {}
 
 /// An iterator over a reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
@@ -2044,6 +3153,8 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
         self.inner.take()
     }
 }
+
+impl<T> ExactSizeIterator for Iter<'_, T> {}
 
 impl<'a, T> FusedIterator for Iter<'a, T> {}
 
@@ -2077,6 +3188,8 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
         self.inner.take()
     }
 }
+
+impl<T> ExactSizeIterator for IterMut<'_, T> {}
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
@@ -2139,11 +3252,11 @@ where
             Success(x) => from_try(f(acc, x)),
             LocalErr(l) => {
                 *error = LocalErr(l);
-                ControlFlow::Break(try { acc })
+                ControlFlow::Break(R::from_output(acc))
             }
             FatalErr(f) => {
                 *error = FatalErr(f);
-                ControlFlow::Break(try { acc })
+                ControlFlow::Break(R::from_output(acc))
             }
         }))
     }

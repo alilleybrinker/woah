@@ -13,9 +13,14 @@ this with manual pattern-matching on a `Result`, or by constructing a
 
 ## Example
 
+This example uses the `?` operator on a `woah::Result`, which requires the
+`nightly` feature on a nightly toolchain. On stable you convert to and from a
+`std::result::Result` instead; see [Use](#use) below, the crate documentation,
+or `examples/std_result_interop.rs`.
+
 ```rust
 use woah::prelude::*;
-use rand::prelude::*;
+use rand::random;
 
 fn main() {
     match get_data() {
@@ -74,7 +79,7 @@ the `?` operator, which is less convenient.
 
 | Feature Name | Default? | Purpose |
 |:-------------|:--------|:---------|
-| `nightly`    | No      | Lets you use the `?` operator with `woah::Result`, and adds some other convenience trait impls based on unstable APIs in `std`. |
+| `nightly`    | No      | Lets you use the `?` operator with `woah::Result`, and adds some other convenience trait impls based on unstable APIs in `std`. Requires a nightly toolchain from Rust 1.100 or later. |
 | `std`        | Yes     | Uses `std` for imports, adds the `Termination` and `ExitCode` APIs, and if `either` is turned on, turns on `std` for `either` as well. |
 | `either`     | Yes     | Adds methods to `woah::Result` for working with `Either<LocalErr, FatalErr>` |
 | `serde`      | No      | Implements `Serialize` and `Deserialize` for `woah::Result` |
