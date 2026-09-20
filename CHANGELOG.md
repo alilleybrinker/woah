@@ -18,6 +18,11 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - `is_success_and`, `is_err_and`, `is_local_err_and` and `is_fatal_err_and`,
   for testing a contained value against a predicate.
 - `flatten`, collapsing a `Result` nested in another's `Success` variant.
+- `map_err_or`, `map_err_or_else`, `map_local_err_or`, `map_local_err_or_else`,
+  `map_fatal_err_or` and `map_fatal_err_or_else`. These stand to `map_err`,
+  `map_local_err` and `map_fatal_err` as `map_or` and `map_or_else` stand to
+  `map`: they unwrap to a value rather than returning a `Result`. The `docs`
+  module had listed all six since 0.4.x, but they were never implemented.
 - `unwrap_unchecked`, `unwrap_err_unchecked`, `unwrap_local_err_unchecked` and
   `unwrap_fatal_err_unchecked`. These are `unsafe`: calling one on a variant it
   does not name is undefined behavior.
@@ -50,11 +55,9 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   hand-written HTML paths had rotted: all 68 links on the `docs` module's page
   pointed one directory too high, and the trait-impl anchors no longer matched
   the ids rustdoc generates.
-- The `docs` module listed six methods that do not exist (`map_err_or`,
-  `map_err_or_else`, `map_local_err_or`, `map_local_err_or_else`,
-  `map_fatal_err_or` and `map_fatal_err_or_else`), and pointed at three
-  features that do not exist (`try_trait`, `termination_trait` and
-  `from_iterator_trait`). It also described the `Termination` impl as
+- The `docs` module pointed at three features that do not exist (`try_trait`,
+  `termination_trait` and `from_iterator_trait`). It also described the
+  `Termination` impl as
   nightly-only, when the impl for `Result<(), L, F>` works on stable with the
   `std` feature.
 - `IntoIter::size_hint` reported `(0, None)` rather than an exact bound,

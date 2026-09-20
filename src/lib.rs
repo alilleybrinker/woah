@@ -205,14 +205,20 @@ pub mod docs {
     //! Applies some function to the contained value, if it's a local or fatal error.
     //!
     //! 1. [`map_err`](crate::Result::map_err)
+    //! 2. [`map_err_or`](crate::Result::map_err_or)
+    //! 3. [`map_err_or_else`](crate::Result::map_err_or_else)
     //!
     //! Applies some function to the contained value, if it's a local error.
     //!
     //! 1. [`map_local_err`](crate::Result::map_local_err)
+    //! 2. [`map_local_err_or`](crate::Result::map_local_err_or)
+    //! 3. [`map_local_err_or_else`](crate::Result::map_local_err_or_else)
     //!
     //! Applies some function to the contained value, if it's a fatal error.
     //!
     //! 1. [`map_fatal_err`](crate::Result::map_fatal_err)
+    //! 2. [`map_fatal_err_or`](crate::Result::map_fatal_err_or)
+    //! 3. [`map_fatal_err_or_else`](crate::Result::map_fatal_err_or_else)
     //!
     //! ### Iterate over the contained value
     //!
@@ -1173,6 +1179,91 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], or return
+    /// a default.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn size(err: Either<u32, u32>) -> u32 {
+    ///     match err {
+    ///         Left(l) => l + 1,
+    ///         Right(f) => f + 2,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_err_or(5, size), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_err_or(5, size), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_err_or(5, size), 5);
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn map_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(Either<L, F>) -> U,
+    {
+        match self {
+            Success(_) => default,
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
+    ///
+    /// Otherwise run the provided default function on the [`Success`] value.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn size(err: Either<u32, u32>) -> u32 {
+    ///     match err {
+    ///         Left(l) => l + 1,
+    ///         Right(f) => f + 2,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_err_or_else(|s| s + 3, size), 3);
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn map_err_or_else<U, SD, G>(self, default_success: SD, f: G) -> U
+    where
+        SD: FnOnce(T) -> U,
+        G: FnOnce(Either<L, F>) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
     /// Apply a function to the contained value if it's a [`LocalErr`].
     ///
     /// [`LocalErr`]: crate::Result::LocalErr
@@ -1203,6 +1294,78 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`LocalErr`], or return a default.
+    ///
+    /// The default is returned for a [`FatalErr`] as well as for a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 5);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 5);
+    /// ```
+    #[inline]
+    pub fn map_local_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(L) -> U,
+    {
+        match self {
+            LocalErr(err) => f(err),
+            _ => default,
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`].
+    ///
+    /// Otherwise run one of the provided default functions.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_local_err_or_else(|s| s + 2, |f| f + 3, |l| l + 1), 3);
+    /// ```
+    #[inline]
+    pub fn map_local_err_or_else<U, SD, FD, G>(
+        self,
+        default_success: SD,
+        default_fatal: FD,
+        f: G,
+    ) -> U
+    where
+        SD: FnOnce(T) -> U,
+        FD: FnOnce(F) -> U,
+        G: FnOnce(L) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => f(err),
+            FatalErr(err) => default_fatal(err),
+        }
+    }
+
     /// Apply a function to the contained value if it's a [`FatalErr`].
     ///
     /// [`FatalErr`]: crate::Result::FatalErr
@@ -1230,6 +1393,78 @@ impl<T, L, F> Result<T, L, F> {
             Success(t) => Success(t),
             LocalErr(e) => LocalErr(e),
             FatalErr(e) => FatalErr(f(e)),
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`FatalErr`], or return a default.
+    ///
+    /// The default is returned for a [`LocalErr`] as well as for a [`Success`].
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 5);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 5);
+    /// ```
+    #[inline]
+    pub fn map_fatal_err_or<U, G>(self, default: U, f: G) -> U
+    where
+        G: FnOnce(F) -> U,
+    {
+        match self {
+            FatalErr(err) => f(err),
+            _ => default,
+        }
+    }
+
+    /// Apply a function to the contained value if it's a [`FatalErr`].
+    ///
+    /// Otherwise run one of the provided default functions.
+    ///
+    /// [`FatalErr`]: crate::Result::FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 1);
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 2);
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.map_fatal_err_or_else(|s| s + 2, |l| l + 3, |f| f + 1), 3);
+    /// ```
+    #[inline]
+    pub fn map_fatal_err_or_else<U, SD, LD, G>(
+        self,
+        default_success: SD,
+        default_local: LD,
+        f: G,
+    ) -> U
+    where
+        SD: FnOnce(T) -> U,
+        LD: FnOnce(L) -> U,
+        G: FnOnce(F) -> U,
+    {
+        match self {
+            Success(t) => default_success(t),
+            LocalErr(err) => default_local(err),
+            FatalErr(err) => f(err),
         }
     }
 
