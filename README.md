@@ -20,7 +20,7 @@ or `examples/std_result_interop.rs`.
 
 ```rust
 use woah::prelude::*;
-use rand::prelude::*;
+use rand::random;
 
 fn main() {
     match get_data() {

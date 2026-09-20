@@ -3,7 +3,7 @@
 // Compile with `cargo +nightly check --examples --features=nightly`
 // Run with `cargo +nightly run --example basic --features=nightly`
 
-use rand::prelude::*;
+use rand::random;
 use std::fmt::{self, Display, Formatter};
 use woah::prelude::*;
 
