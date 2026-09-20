@@ -271,15 +271,16 @@ pub mod docs {
     //!
     //! ### Use `woah::Result` with the question mark operator
     //!
-    //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with `nightly` feature or `try_trait` feature)
+    //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with the `nightly` feature)
     //!
     //! ### Use `woah::Result` as the return type of `main`
     //!
-    //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (nightly-only, with `nightly` feature, or `termination_trait` and `std` features)
+    //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (with the `std` feature; the
+    //!    impl for `Result<!, L, F>` additionally needs the `nightly` feature)
     //!
     //! ### Build a `woah::Result` from an iterator
     //!
-    //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with `nightly` feature, or `from_iterator_trait` feature)
+    //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with the `nightly` feature)
     //!
     //! ## Features
     //!

@@ -13,6 +13,11 @@ this with manual pattern-matching on a `Result`, or by constructing a
 
 ## Example
 
+This example uses the `?` operator on a `woah::Result`, which requires the
+`nightly` feature on a nightly toolchain. On stable you convert to and from a
+`std::result::Result` instead; see [Use](#use) below, the crate documentation,
+or `examples/std_result_interop.rs`.
+
 ```rust
 use woah::prelude::*;
 use rand::prelude::*;
