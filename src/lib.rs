@@ -286,6 +286,7 @@ pub mod docs {
     //! error outside and the local one inside.
     //!
     //! 1. [`from_flat_result`](crate::Result::from_flat_result)
+    //! 1. [`from_nested_result`](crate::Result::from_nested_result)
     //! 1. [`into_nested_result`](crate::Result::into_nested_result)
     //! 1. [`into_result_default`](crate::Result::into_result_default)
     //! 1. [`into_result_merged`](crate::Result::into_result_merged)
@@ -468,10 +469,11 @@ impl<T, L, F> Result<T, L, F> {
     /// Convert into the nested `Result<Result<T, L>, F>`, which is equivalent in `?` behavior:
     /// the fatal error is the outer `Err`, and the local error the inner one.
     ///
-    /// Note that this is not the inverse of [`from_flat_result`], which takes the *flat*
-    /// `Result<T, L>` with no fatal channel at all. Round-tripping through the two nests one
-    /// layer deeper each time. The inverse is the [`From`] impl for the same nested shape.
+    /// The inverse is [`from_nested_result`]. Note that it is *not* [`from_flat_result`], which
+    /// takes the flat `Result<T, L>` with no fatal channel at all; round-tripping through that
+    /// pair nests one layer deeper each time.
     ///
+    /// [`from_nested_result`]: crate::Result::from_nested_result
     /// [`from_flat_result`]: crate::Result::from_flat_result
     ///
     /// # Example
@@ -490,12 +492,13 @@ impl<T, L, F> Result<T, L, F> {
     /// Construct a [`Success`] or a [`LocalErr`] from the flat `Result<T, L>`.
     ///
     /// The input carries no fatal error, so this can only ever produce the first two variants.
-    /// For the nested `Result<Result<T, L>, F>` that [`into_nested_result`] produces, use the
-    /// [`From`] impl for that shape instead.
+    /// For the nested `Result<Result<T, L>, F>` that [`into_nested_result`] produces, use
+    /// [`from_nested_result`], which is its inverse and can produce all three.
     ///
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`into_nested_result`]: crate::Result::into_nested_result
+    /// [`from_nested_result`]: crate::Result::from_nested_result
     ///
     /// # Example
     ///
@@ -511,6 +514,55 @@ impl<T, L, F> Result<T, L, F> {
             Ok(t) => Success(t),
             Err(err) => LocalErr(err),
         }
+    }
+
+    /// Construct any of the three variants from the nested `Result<Result<T, L>, F>`.
+    ///
+    /// This is the inverse of [`into_nested_result`]: the outer `Err` becomes a [`FatalErr`],
+    /// the inner one a [`LocalErr`], and `Ok(Ok(_))` a [`Success`]. Unlike
+    /// [`from_flat_result`], which takes the flat `Result<T, L>` and so can only produce the
+    /// first two variants, this can produce all three.
+    ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`into_nested_result`]: crate::Result::into_nested_result
+    /// [`from_flat_result`]: crate::Result::from_flat_result
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let result: Result<i64, &str, &str> = Result::from_nested_result(Ok(Ok(0)));
+    /// assert_eq!(result, Success(0));
+    ///
+    /// let result: Result<i64, &str, &str> = Result::from_nested_result(Ok(Err("local")));
+    /// assert_eq!(result, LocalErr("local"));
+    ///
+    /// let result: Result<i64, &str, &str> = Result::from_nested_result(Err("fatal"));
+    /// assert_eq!(result, FatalErr("fatal"));
+    /// ```
+    ///
+    /// Round-tripping through [`into_nested_result`] gets the original back, which
+    /// [`from_flat_result`] cannot do:
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// for result in [
+    ///     Success(0),
+    ///     LocalErr("a local error"),
+    ///     FatalErr("a fatal error"),
+    /// ] {
+    ///     let result: Result<i64, &str, &str> = result;
+    ///     assert_eq!(Result::from_nested_result(result.into_nested_result()), result);
+    /// }
+    /// ```
+    #[inline]
+    pub fn from_nested_result(nested: StdResult<StdResult<T, L>, F>) -> Self {
+        // Delegates to the `From` impl so the two cannot drift apart.
+        From::from(nested)
     }
 
     /// Construct the [`Success`] variant based on some success value.

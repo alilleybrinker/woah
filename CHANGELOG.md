@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - `is_success_and`, `is_err_and`, `is_local_err_and` and `is_fatal_err_and`,
   for testing a contained value against a predicate.
 - `flatten`, collapsing a `Result` nested in another's `Success` variant.
+- `from_nested_result`, constructing any of the three variants from the nested
+  `Result<Result<T, L>, F>`. This is the inverse of `into_nested_result`, which
+  previously existed only as a `From` impl with no named counterpart, so the
+  named conversions could go one way but not back.
 - `into_result_merged`, converting into a `std::result::Result<T, F>` by merging both
   error channels into one, escalating a `LocalErr` through `F: From<L>`. This is
   the transform #7 asked for, which `flatten` -- the direct analogue of std's
