@@ -54,6 +54,45 @@ fn iter_mut_writes_through() {
 }
 
 #[test]
+fn into_iter_reports_exact_length() {
+    let success: R = Success(5);
+    let iter = success.into_iter();
+
+    assert_eq!(iter.size_hint(), (1, Some(1)));
+    assert_eq!(iter.len(), 1);
+
+    let fatal: R = FatalErr("a fatal error");
+    let iter = fatal.into_iter();
+
+    assert_eq!(iter.size_hint(), (0, Some(0)));
+    assert_eq!(iter.len(), 0);
+}
+
+#[test]
+fn into_iter_is_fused_and_double_ended() {
+    let success: R = Success(5);
+    let mut iter = success.into_iter();
+
+    assert_eq!(iter.next_back(), Some(5));
+    assert_eq!(iter.next(), None);
+    // Fused: still `None` once exhausted.
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn iter_and_iter_mut_report_exact_length() {
+    let mut success: R = Success(5);
+
+    assert_eq!(success.iter().len(), 1);
+    assert_eq!(success.iter_mut().len(), 1);
+
+    let mut fatal: R = FatalErr("a fatal error");
+
+    assert_eq!(fatal.iter().len(), 0);
+    assert_eq!(fatal.iter_mut().len(), 0);
+}
+
+#[test]
 fn into_iterator_by_value() {
     let success: R = Success(5);
     assert_eq!(success.into_iter().collect::<Vec<_>>(), vec![5]);

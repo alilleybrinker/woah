@@ -21,6 +21,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - `unwrap_unchecked`, `unwrap_err_unchecked`, `unwrap_local_err_unchecked` and
   `unwrap_fatal_err_unchecked`. These are `unsafe`: calling one on a variant it
   does not name is undefined behavior.
+- `ExactSizeIterator` for `IntoIter`, `Iter` and `IterMut`, and
+  `DoubleEndedIterator`, `FusedIterator` and (with the `nightly` feature)
+  `TrustedLen` for `IntoIter`, which previously implemented only `Iterator`
+  while the other two iterators implemented all four.
 - Integration tests for the serde impls, the iterator types and the
   `nightly`-gated trait impls, including the `?` behavior the crate exists to
   provide.
@@ -53,6 +57,9 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   `from_iterator_trait`). It also described the `Termination` impl as
   nightly-only, when the impl for `Result<(), L, F>` works on stable with the
   `std` feature.
+- `IntoIter::size_hint` reported `(0, None)` rather than an exact bound,
+  because it did not override the default. `Iter` and `IterMut` always
+  reported exactly.
 - A stable `cargo build` is warning-free again: the crate no longer uses
   `try` blocks, whose syntax warned even with the surrounding code compiled
   out, and the elided-lifetime and `needless_lifetimes` findings are resolved.

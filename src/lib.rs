@@ -58,7 +58,7 @@ use core::iter::Product;
 use core::iter::Sum;
 #[cfg(feature = "nightly")]
 use core::iter::TrustedLen;
-use core::iter::{DoubleEndedIterator, FusedIterator, Iterator};
+use core::iter::{DoubleEndedIterator, ExactSizeIterator, FusedIterator, Iterator};
 #[cfg(feature = "nightly")]
 use core::ops::ControlFlow;
 use core::ops::{Deref, DerefMut};
@@ -2736,7 +2736,27 @@ impl<T> Iterator for IntoIter<T> {
     fn next(&mut self) -> Option<T> {
         self.inner.take()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = if self.inner.is_some() { 1 } else { 0 };
+        (n, Some(n))
+    }
 }
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<T> {
+        self.inner.take()
+    }
+}
+
+impl<T> ExactSizeIterator for IntoIter<T> {}
+
+impl<T> FusedIterator for IntoIter<T> {}
+
+#[cfg(feature = "nightly")]
+unsafe impl<T> TrustedLen for IntoIter<T> {}
 
 /// An iterator over a reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
@@ -2765,6 +2785,8 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
         self.inner.take()
     }
 }
+
+impl<T> ExactSizeIterator for Iter<'_, T> {}
 
 impl<'a, T> FusedIterator for Iter<'a, T> {}
 
@@ -2798,6 +2820,8 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
         self.inner.take()
     }
 }
+
+impl<T> ExactSizeIterator for IterMut<'_, T> {}
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
 

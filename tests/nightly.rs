@@ -8,6 +8,7 @@
 //! exists to provide, and nothing else in the suite checks it.
 
 #![cfg(feature = "nightly")]
+#![feature(trusted_len)]
 
 use woah::prelude::*;
 
@@ -124,4 +125,13 @@ fn termination_is_implemented() {
 
     assert_termination::<Result<(), &'static str, &'static str>>();
     assert_termination::<Result<!, &'static str, &'static str>>();
+}
+
+#[test]
+fn iterators_are_trusted_len() {
+    fn assert_trusted_len<I: core::iter::TrustedLen>() {}
+
+    assert_trusted_len::<woah::IntoIter<u32>>();
+    assert_trusted_len::<woah::Iter<'_, u32>>();
+    assert_trusted_len::<woah::IterMut<'_, u32>>();
 }
