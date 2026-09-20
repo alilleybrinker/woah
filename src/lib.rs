@@ -29,12 +29,13 @@
 // Turn on the `Try` trait for both code and documentation tests.
 #![cfg_attr(feature = "nightly", feature(try_trait_v2))]
 #![cfg_attr(feature = "nightly", feature(try_blocks))]
-#![cfg_attr(feature = "nightly", feature(control_flow_enum))]
 #![cfg_attr(feature = "nightly", feature(trusted_len))]
+// `never_type` stabilized in Rust 1.100. The gate stays for now so the
+// `nightly` feature still builds on older nightly toolchains; it can go once
+// `!` is usable on every nightly the crate cares about.
 #![cfg_attr(feature = "nightly", feature(never_type))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_trait_v2)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(try_blocks)))))]
-#![cfg_attr(feature = "nightly", doc(test(attr(feature(control_flow_enum)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(trusted_len)))))]
 #![cfg_attr(feature = "nightly", doc(test(attr(feature(never_type)))))]
 // Turn on clippy lints.
