@@ -35,3 +35,14 @@ rand = "0.8.5"
 [package.metadata.docs.rs]
 # Turn on all features on docs.rs (documentation explains which are nightly-only)
 features = ['default', 'serde', 'nightly']
+
+# Both examples use the `?` operator on `woah::Result`, which relies on the
+# `Try` impl gated behind the nightly-only `nightly` feature. Without this,
+# a plain `cargo test` on stable fails trying to build them.
+[[example]]
+name = "basic"
+required-features = ["nightly"]
+
+[[example]]
+name = "std_result_interop"
+required-features = ["nightly"]
