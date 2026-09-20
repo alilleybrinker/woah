@@ -1,6 +1,6 @@
 [package]
 name = "woah"
-version = "0.4.5"
+version = "0.5.0"
 description = """
     A Result type that differentiates between local errors (which can be handled)
     and fatal errors (which cannot)
@@ -8,7 +8,7 @@ description = """
 license = "MIT OR Apache-2.0"
 edition = "2024"
 rust-version = "1.98.0"
-categories = ["rust-patterns"]
+categories = ["rust-patterns", "no-std"]
 keywords = ["result", "error-handling"]
 repository = "https://github.com/alilleybrinker/woah"
 documentation = "https://docs.rs/woah"
