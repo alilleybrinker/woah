@@ -1119,7 +1119,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r.iter().next(), Some(&0));
     /// ```
     #[inline]
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
@@ -1150,7 +1150,7 @@ impl<T, L, F> Result<T, L, F> {
     /// assert_eq!(r, Success(5));
     /// ```
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         let inner = match self {
             Success(t) => Some(t),
             _ => None,
@@ -1466,7 +1466,7 @@ impl<T, L, F> Result<T, L, F> {
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F>
+impl<T, L, F> Result<&T, L, F>
 where
     T: Copy,
 {
@@ -1492,7 +1492,7 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F>
+impl<T, L, F> Result<&mut T, L, F>
 where
     T: Copy,
 {
@@ -1518,7 +1518,7 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a T, L, F>
+impl<T, L, F> Result<&T, L, F>
 where
     T: Clone,
 {
@@ -1544,7 +1544,7 @@ where
     }
 }
 
-impl<'a, T, L, F> Result<&'a mut T, L, F>
+impl<T, L, F> Result<&mut T, L, F>
 where
     T: Clone,
 {
