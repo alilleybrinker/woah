@@ -291,8 +291,9 @@ pub mod docs {
     //!
     //! ### Use `woah::Result` as the return type of `main`
     //!
-    //! 1. [`Termination` impl](crate::Result#trait-implementations) (with the `std` feature; the
-    //!    impl for `Result<!, L, F>` additionally needs the `nightly` feature)
+    //! 1. [`Termination` impl](crate::Result#trait-implementations) (with the `std` feature, for
+    //!    any success type that implements `Termination` itself, which includes `()` and, on
+    //!    nightly, `!`)
     //!
     //! ### Build a `woah::Result` from an iterator
     //!
@@ -3047,46 +3048,29 @@ where
     }
 }
 
+// Generic over `T` the way std's `impl<T: Termination, E: Debug> Termination for
+// Result<T, E>` is. This subsumes the two impls that used to be here, for
+// `Result<(), L, F>` and `Result<!, L, F>`: both `()` and `!` implement
+// `Termination`, so a blanket impl would have collided with them.
 #[cfg(feature = "std")]
-impl<L, F> Termination for Result<(), L, F>
+impl<T, L, F> Termination for Result<T, L, F>
 where
+    T: Termination,
     L: Debug,
     F: Debug,
 {
     #[inline]
     fn report(self) -> ExitCode {
         match self {
-            Success(()) => ().report(),
+            Success(t) => t.report(),
             LocalErr(err) => {
                 eprintln!("Error: {:?}", err);
-                ExitCode::FAILURE.report()
+                ExitCode::FAILURE
             }
             FatalErr(err) => {
                 eprintln!("Error: {:?}", err);
-                ExitCode::FAILURE.report()
+                ExitCode::FAILURE
             }
-        }
-    }
-}
-
-#[cfg(all(feature = "nightly", feature = "std"))]
-impl<L, F> Termination for Result<!, L, F>
-where
-    L: Debug,
-    F: Debug,
-{
-    #[inline]
-    fn report(self) -> ExitCode {
-        match self {
-            LocalErr(err) => {
-                eprintln!("Error: {:?}", err);
-                ExitCode::FAILURE.report()
-            }
-            FatalErr(err) => {
-                eprintln!("Error: {:?}", err);
-                ExitCode::FAILURE.report()
-            }
-            Success(t) => t,
         }
     }
 }

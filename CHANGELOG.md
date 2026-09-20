@@ -41,6 +41,13 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Changed
 
+- The `Termination` impl is now generic over the success type, as std's impl for
+  `std::result::Result` is: any `T: Termination` works, rather than only `()`.
+  This replaces the two previous impls, for `Result<(), L, F>` and
+  `Result<!, L, F>`, which it subsumes -- both `()` and `!` implement
+  `Termination`, so keeping them alongside a blanket impl would not have
+  compiled. A `Success` now reports through its own value's `report`, so
+  `fn main() -> woah::Result<ExitCode, L, F>` can set an exit code.
 - **Breaking:** the minimum supported Rust version is now 1.98.0, up from
   1.61.0.
 - **Breaking:** the crate is now on the 2024 edition.
