@@ -6,7 +6,7 @@ description = """
     and fatal errors (which cannot)
 """
 license = "MIT OR Apache-2.0"
-edition = "2021"
+edition = "2024"
 rust-version = "1.98.0"
 categories = ["rust-patterns"]
 keywords = ["result", "error-handling"]
