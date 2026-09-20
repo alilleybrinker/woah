@@ -48,6 +48,7 @@ use crate::Result::{FatalErr, LocalErr, Success};
 use core::convert::Infallible;
 use core::convert::{From, Into};
 use core::fmt::Debug;
+use core::hint::unreachable_unchecked;
 #[cfg(feature = "nightly")]
 use core::iter::FromIterator;
 #[cfg(feature = "nightly")]
@@ -1956,6 +1957,126 @@ where
             Success(_) => panic!("{}", msg),
             LocalErr(_) => panic!("{}", msg),
             FatalErr(err) => err,
+        }
+    }
+}
+impl<T, L, F> Result<T, L, F> {
+    /// Return the contained [`Success`] value, without checking that the value is a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`LocalErr`] or [`FatalErr`] is undefined behavior.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(0);
+    /// assert_eq!(unsafe { x.unwrap_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_unchecked(self) -> T {
+        match self {
+            Success(t) => t,
+            // SAFETY: the caller guarantees this is a `Success`.
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`LocalErr`] or [`FatalErr`] value, without checking that the value
+    /// is one of them.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] is undefined behavior.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_err_unchecked() }, Left(0));
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(1);
+    /// assert_eq!(unsafe { x.unwrap_err_unchecked() }, Right(1));
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub unsafe fn unwrap_err_unchecked(self) -> Either<L, F> {
+        match self {
+            LocalErr(err) => Left(err),
+            FatalErr(err) => Right(err),
+            // SAFETY: the caller guarantees this is a `LocalErr` or a `FatalErr`.
+            Success(_) => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`LocalErr`] value, without checking that the value is a [`LocalErr`].
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] or [`FatalErr`] is undefined behavior.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_local_err_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_local_err_unchecked(self) -> L {
+        match self {
+            LocalErr(err) => err,
+            // SAFETY: the caller guarantees this is a `LocalErr`.
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+
+    /// Return the contained [`FatalErr`] value, without checking that the value is a [`FatalErr`].
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Safety
+    ///
+    /// Calling this on a [`Success`] or [`LocalErr`] is undefined behavior.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(unsafe { x.unwrap_fatal_err_unchecked() }, 0);
+    /// ```
+    #[inline]
+    pub unsafe fn unwrap_fatal_err_unchecked(self) -> F {
+        match self {
+            FatalErr(err) => err,
+            // SAFETY: the caller guarantees this is a `FatalErr`.
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
