@@ -41,6 +41,13 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Changed
 
+- **Breaking:** the two named conversions to and from `std::result::Result` say
+  which shape they deal with. `into_result` is now `into_nested_result`, for the
+  nested `Result<Result<T, L>, F>` it returns, and `from_result` is now
+  `from_flat_result`, for the flat `Result<T, L>` it takes. The old names looked
+  like inverses and were not: round-tripping them nests one layer deeper each
+  time. The `From` impls, which are unambiguous because the types differ, are
+  unchanged.
 - **Breaking:** `or_local`, `or_fatal`, `or_else_local` and `or_else_fatal` are
   renamed `or_local_err`, `or_fatal_err`, `or_else_local_err` and
   `or_else_fatal_err`. They were the only four methods naming a variant without

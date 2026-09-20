@@ -281,7 +281,12 @@ pub mod docs {
     //!
     //! ### Convert to and from a `std::result::Result`
     //!
-    //! 1. [`into_result`](crate::Result::into_result)
+    //! The shape names say which `std::result::Result` is involved: the *flat* `Result<T, L>`
+    //! carries only the local error, while the *nested* `Result<Result<T, L>, F>` puts the fatal
+    //! error outside and the local one inside.
+    //!
+    //! 1. [`from_flat_result`](crate::Result::from_flat_result)
+    //! 1. [`into_nested_result`](crate::Result::into_nested_result)
     //! 1. [`into_result_default`](crate::Result::into_result_default)
     //! 1. [`into_result_merged`](crate::Result::into_result_merged)
     //!
@@ -355,7 +360,7 @@ pub mod docs {
     //!         Ordering::Greater => Success(x),
     //!         Ordering::Equal => LocalErr(LocalError::SomeError),
     //!         Ordering::Less => FatalErr(FatalError::CatastrophicError),
-    //!     }.into_result()
+    //!     }.into_nested_result()
     //! }
     //!
     //! #[derive(Debug)]
@@ -460,38 +465,48 @@ impl<T, L, F> Try for Result<T, L, F> {
 }
 
 impl<T, L, F> Result<T, L, F> {
-    /// Convert `woah::Result<T, L, F>` into a `Result<Result<T, L>, F>`, which is equivalent
-    /// in `?` behavior.
+    /// Convert into the nested `Result<Result<T, L>, F>`, which is equivalent in `?` behavior:
+    /// the fatal error is the outer `Err`, and the local error the inner one.
+    ///
+    /// Note that this is not the inverse of [`from_flat_result`], which takes the *flat*
+    /// `Result<T, L>` with no fatal channel at all. Round-tripping through the two nests one
+    /// layer deeper each time. The inverse is the [`From`] impl for the same nested shape.
+    ///
+    /// [`from_flat_result`]: crate::Result::from_flat_result
     ///
     /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_result();
+    /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_nested_result();
     /// assert_eq!(result, Ok(Err("a local error")));
     /// ```
     #[inline]
-    pub fn into_result(self) -> StdResult<StdResult<T, L>, F> {
+    pub fn into_nested_result(self) -> StdResult<StdResult<T, L>, F> {
         self.into()
     }
 
-    /// Construct either a [`Success`] or [`LocalErr`] variant based on a
-    /// `Result`.
+    /// Construct a [`Success`] or a [`LocalErr`] from the flat `Result<T, L>`.
+    ///
+    /// The input carries no fatal error, so this can only ever produce the first two variants.
+    /// For the nested `Result<Result<T, L>, F>` that [`into_nested_result`] produces, use the
+    /// [`From`] impl for that shape instead.
     ///
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`into_nested_result`]: crate::Result::into_nested_result
     ///
     /// # Example
     ///
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let result: Result<i64, &str, &str> = Result::from_result(Ok(0));
+    /// let result: Result<i64, &str, &str> = Result::from_flat_result(Ok(0));
     /// assert_eq!(result, Success(0));
     /// ```
     #[inline]
-    pub fn from_result(ok: StdResult<T, L>) -> Self {
+    pub fn from_flat_result(ok: StdResult<T, L>) -> Self {
         match ok {
             Ok(t) => Success(t),
             Err(err) => LocalErr(err),
@@ -3309,7 +3324,7 @@ where
         S: Serializer,
     {
         // Convert `woah::Result` into `StdResult<StdResult<&T, &L>, &F>` and serialize that.
-        self.as_ref().into_result().serialize(serializer)
+        self.as_ref().into_nested_result().serialize(serializer)
     }
 }
 
