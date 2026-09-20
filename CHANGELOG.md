@@ -71,6 +71,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   errors.
 - The README's headline example now says that it needs the `nightly` feature,
   rather than leaving the caveat further down the page.
+- `cargo doc --no-default-features` builds without warnings. The `docs`
+  module's index linked `either`-gated methods unconditionally, so those links
+  did not resolve with the feature off; they are now conditional on it, and CI
+  builds the docs both ways.
 
 ### Removed
 

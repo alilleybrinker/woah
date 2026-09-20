@@ -157,7 +157,10 @@ pub mod docs {
     //! These methods check if the `Result` contains a particular value.
     //!
     //! 1. [`contains`](crate::Result::contains)
-    //! 2. [`contains_err`](crate::Result::contains_err)
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`contains_err`](crate::Result::contains_err)"
+    )]
     //! 3. [`contains_local_err`](crate::Result::contains_local_err)
     //! 4. [`contains_fatal_err`](crate::Result::contains_fatal_err)
     //!
@@ -167,7 +170,7 @@ pub mod docs {
     //! another variant.
     //!
     //! 1. [`success`](crate::Result::success)
-    //! 2. [`err`](crate::Result::err)
+    #![cfg_attr(feature = "either", doc = "2. [`err`](crate::Result::err)")]
     //! 3. [`local_err`](crate::Result::local_err)
     //! 4. [`fatal_err`](crate::Result::fatal_err)
     //!
@@ -204,9 +207,15 @@ pub mod docs {
     //!
     //! Applies some function to the contained value, if it's a local or fatal error.
     //!
-    //! 1. [`map_err`](crate::Result::map_err)
-    //! 2. [`map_err_or`](crate::Result::map_err_or)
-    //! 3. [`map_err_or_else`](crate::Result::map_err_or_else)
+    #![cfg_attr(feature = "either", doc = "1. [`map_err`](crate::Result::map_err)")]
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`map_err_or`](crate::Result::map_err_or)"
+    )]
+    #![cfg_attr(
+        feature = "either",
+        doc = "3. [`map_err_or_else`](crate::Result::map_err_or_else)"
+    )]
     //!
     //! Applies some function to the contained value, if it's a local error.
     //!
@@ -242,14 +251,20 @@ pub mod docs {
     //! ### Unwrap the `Result`
     //!
     //! 1. [`unwrap`](crate::Result::unwrap)
-    //! 2. [`unwrap_err`](crate::Result::unwrap_err)
+    #![cfg_attr(
+        feature = "either",
+        doc = "2. [`unwrap_err`](crate::Result::unwrap_err)"
+    )]
     //! 3. [`unwrap_fatal_err`](crate::Result::unwrap_fatal_err)
     //! 4. [`unwrap_local_err`](crate::Result::unwrap_local_err)
     //! 5. [`unwrap_or`](crate::Result::unwrap_or)
     //! 6. [`unwrap_or_default`](crate::Result::unwrap_or_default)
     //! 7. [`unwrap_or_else`](crate::Result::unwrap_or_else)
     //! 8. [`expect`](crate::Result::expect)
-    //! 9. [`expect_err`](crate::Result::expect_err)
+    #![cfg_attr(
+        feature = "either",
+        doc = "9. [`expect_err`](crate::Result::expect_err)"
+    )]
     //! 10. [`expect_fatal_err`](crate::Result::expect_fatal_err)
     //! 11. [`expect_local_err`](crate::Result::expect_local_err)
     //!
@@ -1182,8 +1197,13 @@ impl<T, L, F> Result<T, L, F> {
     /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], or return
     /// a default.
     ///
+    /// **The [`Success`] value is discarded.** The default stands in for it, so the success value
+    /// never reaches the caller. Use [`map_err_or_else`] to map it instead of dropping it.
+    ///
+    /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_err_or_else`]: crate::Result::map_err_or_else
     ///
     /// # Example
     ///
@@ -1204,6 +1224,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(x.map_err_or(5, size), 2);
     ///
+    /// // The success value is discarded; only the default comes back.
     /// let x: Result<u32, u32, u32> = Success(0);
     /// assert_eq!(x.map_err_or(5, size), 5);
     /// ```
@@ -1222,11 +1243,13 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
     ///
-    /// Otherwise run the provided default function on the [`Success`] value.
+    /// Otherwise run the provided default function on the [`Success`] value. Unlike
+    /// [`map_err_or`], nothing is discarded: every variant reaches a function.
     ///
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_err_or`]: crate::Result::map_err_or
     ///
     /// # Example
     ///
@@ -1296,11 +1319,23 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`], or return a default.
     ///
-    /// The default is returned for a [`FatalErr`] as well as for a [`Success`].
+    /// **A [`FatalErr`] is discarded.** The default stands in for both of the other variants, so
+    /// a fatal error and its payload are dropped and the caller cannot tell that case apart from
+    /// a [`Success`]. Since the point of this crate is that fatal errors do not get swallowed,
+    /// this is worth a second look: prefer [`map_local_err_or_else`], which gives each variant
+    /// its own function, unless the default really is right for a fatal error too.
     ///
+    #[cfg_attr(
+        feature = "either",
+        doc = "[`map_err_or`] is the other way to keep the fatal error, mapping both errors with",
+        doc = "one function.",
+        doc = "",
+        doc = "[`map_err_or`]: crate::Result::map_err_or"
+    )]
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_local_err_or_else`]: crate::Result::map_local_err_or_else
     ///
     /// # Example
     ///
@@ -1310,6 +1345,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<u32, u32, u32> = LocalErr(0);
     /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 1);
     ///
+    /// // The fatal error is gone, and gives the same answer as a success.
     /// let x: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(x.map_local_err_or(5, |l| l + 1), 5);
     ///
@@ -1329,9 +1365,13 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`].
     ///
-    /// Otherwise run one of the provided default functions.
+    /// Otherwise run one of the provided default functions. Unlike [`map_local_err_or`], nothing
+    /// is discarded: the [`Success`] and [`FatalErr`] variants each get their own function.
     ///
+    /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_local_err_or`]: crate::Result::map_local_err_or
     ///
     /// # Example
     ///
@@ -1398,11 +1438,22 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`FatalErr`], or return a default.
     ///
-    /// The default is returned for a [`LocalErr`] as well as for a [`Success`].
+    /// **A [`LocalErr`] is discarded.** The default stands in for both of the other variants, so
+    /// a local error and its payload are dropped and the caller cannot tell that case apart from
+    /// a [`Success`]. A local error is the handleable kind, so losing it is less serious than
+    /// losing a fatal one, but it is still information the caller does not get back. Use
+    /// [`map_fatal_err_or_else`] to give each variant its own function.
     ///
+    #[cfg_attr(
+        feature = "either",
+        doc = "[`map_err_or`] maps both errors with one function instead.",
+        doc = "",
+        doc = "[`map_err_or`]: crate::Result::map_err_or"
+    )]
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_fatal_err_or_else`]: crate::Result::map_fatal_err_or_else
     ///
     /// # Example
     ///
@@ -1412,6 +1463,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 1);
     ///
+    /// // The local error is gone, and gives the same answer as a success.
     /// let x: Result<u32, u32, u32> = LocalErr(0);
     /// assert_eq!(x.map_fatal_err_or(5, |f| f + 1), 5);
     ///
@@ -1431,9 +1483,13 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`FatalErr`].
     ///
-    /// Otherwise run one of the provided default functions.
+    /// Otherwise run one of the provided default functions. Unlike [`map_fatal_err_or`], nothing
+    /// is discarded: the [`Success`] and [`LocalErr`] variants each get their own function.
     ///
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
+    /// [`map_fatal_err_or`]: crate::Result::map_fatal_err_or
     ///
     /// # Example
     ///

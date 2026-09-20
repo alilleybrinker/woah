@@ -66,5 +66,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@nightly
 
-      - name: cargo doc
+      - name: cargo doc (all features)
         run: cargo doc --all-features --no-deps
+
+      # Intra-doc links to `either`-gated items only resolve when that feature
+      # is on, so the feature-off build needs checking separately.
+      - name: cargo doc (no default features)
+        run: cargo doc --no-default-features --no-deps
