@@ -283,6 +283,7 @@ pub mod docs {
     //!
     //! 1. [`into_result`](crate::Result::into_result)
     //! 1. [`into_result_default`](crate::Result::into_result_default)
+    //! 1. [`into_result_merged`](crate::Result::into_result_merged)
     //!
     //! ### Use `woah::Result` with the question mark operator
     //!
@@ -2524,6 +2525,78 @@ where
     }
 }
 
+impl<T, L, F> Result<T, L, F>
+where
+    F: From<L>,
+{
+    /// Convert into a `Result<T, F>`, merging the two error channels into one.
+    ///
+    /// The [`LocalErr`] value is converted into the fatal error type, so both errors come back
+    /// as a single `Err`. When the two error types are the same, as in
+    /// `woah::Result<T, E, E>`, that conversion is the identity and this is simply a way to
+    /// stop distinguishing the two.
+    ///
+    /// This is the counterpart to [`into_result_default`], which drops the local error and
+    /// substitutes `T`'s default instead of escalating it. It is not [`flatten`], which removes
+    /// a layer of nesting rather than collapsing the error channels.
+    ///
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`into_result_default`]: crate::Result::into_result_default
+    /// [`flatten`]: crate::Result::flatten
+    ///
+    /// # Example
+    ///
+    /// With one error type in both channels there is nothing to convert:
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, &str, &str> = Success(5);
+    /// assert_eq!(r.into_result_merged(), Ok(5));
+    ///
+    /// let r: Result<u32, &str, &str> = LocalErr("an error");
+    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    ///
+    /// let r: Result<u32, &str, &str> = FatalErr("an error");
+    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    /// ```
+    ///
+    /// With two error types, the local one escalates through its `From` impl:
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// #[derive(Debug, PartialEq)]
+    /// struct Timeout;
+    ///
+    /// #[derive(Debug, PartialEq)]
+    /// enum Fatal {
+    ///     GaveUp,
+    ///     Unreachable,
+    /// }
+    ///
+    /// impl From<Timeout> for Fatal {
+    ///     fn from(_: Timeout) -> Fatal {
+    ///         Fatal::GaveUp
+    ///     }
+    /// }
+    ///
+    /// let r: Result<u32, Timeout, Fatal> = LocalErr(Timeout);
+    /// assert_eq!(r.into_result_merged(), Err(Fatal::GaveUp));
+    ///
+    /// let r: Result<u32, Timeout, Fatal> = FatalErr(Fatal::Unreachable);
+    /// assert_eq!(r.into_result_merged(), Err(Fatal::Unreachable));
+    /// ```
+    #[inline]
+    pub fn into_result_merged(self) -> StdResult<T, F> {
+        match self {
+            Success(t) => Ok(t),
+            LocalErr(err) => Err(F::from(err)),
+            FatalErr(err) => Err(err),
+        }
+    }
+}
+
 #[cfg(feature = "nightly")]
 impl<T, L, F> Result<T, L, F>
 where
@@ -2808,7 +2881,11 @@ where
 impl<T, L, F> Result<Result<T, L, F>, L, F> {
     /// Flatten a `Result` nested inside the [`Success`] variant of another `Result`.
     ///
+    /// This removes a layer of nesting. To collapse a single `Result`'s two error channels into
+    /// one instead, see [`into_result_merged`].
+    ///
     /// [`Success`]: crate::Result::Success
+    /// [`into_result_merged`]: crate::Result::into_result_merged
     ///
     /// # Example
     ///

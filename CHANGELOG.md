@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - `is_success_and`, `is_err_and`, `is_local_err_and` and `is_fatal_err_and`,
   for testing a contained value against a predicate.
 - `flatten`, collapsing a `Result` nested in another's `Success` variant.
+- `into_result_merged`, converting into a `std::result::Result<T, F>` by merging both
+  error channels into one, escalating a `LocalErr` through `F: From<L>`. This is
+  the transform #7 asked for, which `flatten` -- the direct analogue of std's
+  method -- does not perform.
 - `map_err_or`, `map_err_or_else`, `map_local_err_or`, `map_local_err_or_else`,
   `map_fatal_err_or` and `map_fatal_err_or_else`. These stand to `map_err`,
   `map_local_err` and `map_fatal_err` as `map_or` and `map_or_else` stand to
