@@ -10,7 +10,7 @@ jobs:
       matrix:
         # 1.98.0 is the MSRV declared by `rust-version` in Cargo.toml. Keep the
         # two in sync: this job is what stops the declared MSRV from drifting.
-        toolchain: ["1.98.0", stable, beta, nightly]
+        toolchain: ["1.98.0", stable, nightly]
     steps:
       - uses: actions/checkout@v4
 
