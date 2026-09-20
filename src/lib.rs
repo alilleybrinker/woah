@@ -22,7 +22,7 @@
 //! [__For more details, read the `docs` module.__][docs]
 //!
 //! [post]: http://sled.rs/errors.html "Link to the blog post"
-//! [docs]: docs/index.html "Link to the docs module"
+//! [docs]: crate::docs
 
 #![doc(issue_tracker_base_url = "https://github.com/alilleybrinker/woah/issues/")]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -147,140 +147,134 @@ pub mod docs {
     //!
     //! These methods, the "is" methods, return a `bool` based on what variant is present.
     //!
-    //! 1. [`is_success`](../../enum.Result.html#method.is_success)
-    //! 2. [`is_err`](../../enum.Result.html#method.is_err)
-    //! 3. [`is_local_err`](../../enum.Result.html#method.is_local_err)
-    //! 4. [`is_fatal_err`](../../enum.Result.html#method.is_fatal_err)
+    //! 1. [`is_success`](crate::Result::is_success)
+    //! 2. [`is_err`](crate::Result::is_err)
+    //! 3. [`is_local_err`](crate::Result::is_local_err)
+    //! 4. [`is_fatal_err`](crate::Result::is_fatal_err)
     //!
     //! ### See if the `Result` contains a value
     //!
     //! These methods check if the `Result` contains a particular value.
     //!
-    //! 1. [`contains`](../../enum.Result.html#method.contains)
-    //! 2. [`contains_err`](../../enum.Result.html#method.contains_err)
-    //! 3. [`contains_local_err`](../../enum.Result.html#method.contains_local_err)
-    //! 4. [`contains_fatal_err`](../../enum.Result.html#method.contains_fatal_err)
+    //! 1. [`contains`](crate::Result::contains)
+    //! 2. [`contains_err`](crate::Result::contains_err)
+    //! 3. [`contains_local_err`](crate::Result::contains_local_err)
+    //! 4. [`contains_fatal_err`](crate::Result::contains_fatal_err)
     //!
     //! ### Get an `Option` if a variant is present
     //!
     //! These methods try to get the contained value out, returning an `Option` in case it's
     //! another variant.
     //!
-    //! 1. [`success`](../../enum.Result.html#method.success)
-    //! 2. [`err`](../../enum.Result.html#method.err)
-    //! 3. [`local_err`](../../enum.Result.html#method.local_err)
-    //! 4. [`fatal_err`](../../enum.Result.html#method.fatal_err)
+    //! 1. [`success`](crate::Result::success)
+    //! 2. [`err`](crate::Result::err)
+    //! 3. [`local_err`](crate::Result::local_err)
+    //! 4. [`fatal_err`](crate::Result::fatal_err)
     //!
     //! ### Reference the contained value
     //!
     //! Gets a reference (immutable or mutable) to the contained value.
     //!
-    //! 1. [`as_ref`](../../enum.Result.html#method.as_ref)
-    //! 2. [`as_mut`](../../enum.Result.html#method.as_mut)
+    //! 1. [`as_ref`](crate::Result::as_ref)
+    //! 2. [`as_mut`](crate::Result::as_mut)
     //!
     //! ### Dereference the contained value
     //!
     //! Dereferences the contained value if it implements `Deref`.
     //!
-    //! 1. [`as_deref`](../../enum.Result.html#method.as_deref)
-    //! 2. [`as_deref_err`](../../enum.Result.html#method.as_deref_err)
-    //! 3. [`as_deref_local_err`](../../enum.Result.html#method.as_deref_local_err)
-    //! 4. [`as_deref_fatal_err`](../../enum.Result.html#method.as_deref_fatal_err)
+    //! 1. [`as_deref`](crate::Result::as_deref)
+    //! 2. [`as_deref_err`](crate::Result::as_deref_err)
+    //! 3. [`as_deref_local_err`](crate::Result::as_deref_local_err)
+    //! 4. [`as_deref_fatal_err`](crate::Result::as_deref_fatal_err)
     //!
     //! Dereferences the contained value mutably if it implements `DerefMut`.
     //!
-    //! 1. [`as_deref_mut`](../../enum.Result.html#method.as_deref_mut)
-    //! 2. [`as_deref_mut_err`](../../enum.Result.html#method.as_deref_mut_err)
-    //! 3. [`as_deref_mut_local_err`](../../enum.Result.html#method.as_deref_mut_local_err)
-    //! 4. [`as_deref_mut_fatal_err`](../../enum.Result.html#method.as_deref_mut_fatal_err)
+    //! 1. [`as_deref_mut`](crate::Result::as_deref_mut)
+    //! 2. [`as_deref_mut_err`](crate::Result::as_deref_mut_err)
+    //! 3. [`as_deref_mut_local_err`](crate::Result::as_deref_mut_local_err)
+    //! 4. [`as_deref_mut_fatal_err`](crate::Result::as_deref_mut_fatal_err)
     //!
     //! ### Map over the contained value
     //!
     //! Applies some function to the contained value.
     //!
-    //! 1. [`map`](../../enum.Result.html#method.map)
-    //! 2. [`map_or`](../../enum.Result.html#method.map_or)
-    //! 3. [`map_or_else`](../../enum.Result.html#method.map_or_else)
+    //! 1. [`map`](crate::Result::map)
+    //! 2. [`map_or`](crate::Result::map_or)
+    //! 3. [`map_or_else`](crate::Result::map_or_else)
     //!
     //! Applies some function to the contained value, if it's a local or fatal error.
     //!
-    //! 1. [`map_err`](../../enum.Result.html#method.map_err)
-    //! 2. [`map_err_or`](../../enum.Result.html#method.map_err_or)
-    //! 3. [`map_err_or_else`](../../enum.Result.html#method.map_err_or_else)
+    //! 1. [`map_err`](crate::Result::map_err)
     //!
     //! Applies some function to the contained value, if it's a local error.
     //!
-    //! 1. [`map_local_err`](../../enum.Result.html#method.map_local_err)
-    //! 2. [`map_local_err_or`](../../enum.Result.html#method.map_local_err_or)
-    //! 3. [`map_local_err_or_else`](../../enum.Result.html#method.map_local_err_or_else)
+    //! 1. [`map_local_err`](crate::Result::map_local_err)
     //!
     //! Applies some function to the contained value, if it's a fatal error.
     //!
-    //! 1. [`map_fatal_err`](../../enum.Result.html#method.map_fatal_err)
-    //! 2. [`map_fatal_err_or`](../../enum.Result.html#method.map_fatal_err_or)
-    //! 3. [`map_fatal_err_or_else`](../../enum.Result.html#method.map_fatal_err_or_else)
+    //! 1. [`map_fatal_err`](crate::Result::map_fatal_err)
     //!
     //! ### Iterate over the contained value
     //!
-    //! 1. [`iter`](../../enum.Result.html#method.iter)
-    //! 2. [`iter_mut`](../../enum.Result.html#method.iter_mut)
-    //! 3. [`into_iter`](../../enum.Result.html#impl-IntoIterator-2) (for `woah::Result`)
-    //! 4. [`into_iter`](../../enum.Result.html#impl-IntoIterator-1) (for `&woah::Result`)
-    //! 5. [`into_iter`](../../enum.Result.html#impl-IntoIterator) (for `&mut woah::Result`)
+    //! 1. [`iter`](crate::Result::iter)
+    //! 2. [`iter_mut`](crate::Result::iter_mut)
+    //! 3. [`into_iter`](crate::Result#method.into_iter-2) (for `woah::Result`)
+    //! 4. [`into_iter`](crate::Result#method.into_iter-1) (for `&woah::Result`)
+    //! 5. [`into_iter`](crate::Result#method.into_iter) (for `&mut woah::Result`)
     //!
     //! ### Compose `Result`s
     //!
-    //! 1. [`and`](../../enum.Result.html#method.and)
-    //! 2. [`and_then`](../../enum.Result.html#method.and_then)
-    //! 3. [`or`](../../enum.Result.html#method.or)
-    //! 4. [`or_else`](../../enum.Result.html#method.or_else)
-    //! 5. [`or_else_fatal`](../../enum.Result.html#method.or_else_fatal)
-    //! 6. [`or_else_local`](../../enum.Result.html#method.or_else_local)
-    //! 7. [`or_fatal`](../../enum.Result.html#method.or_fatal)
-    //! 8. [`or_local`](../../enum.Result.html#method.or_local)
+    //! 1. [`and`](crate::Result::and)
+    //! 2. [`and_then`](crate::Result::and_then)
+    //! 3. [`or`](crate::Result::or)
+    //! 4. [`or_else`](crate::Result::or_else)
+    //! 5. [`or_else_fatal`](crate::Result::or_else_fatal)
+    //! 6. [`or_else_local`](crate::Result::or_else_local)
+    //! 7. [`or_fatal`](crate::Result::or_fatal)
+    //! 8. [`or_local`](crate::Result::or_local)
     //!
     //! ### Unwrap the `Result`
     //!
-    //! 1. [`unwrap`](../../enum.Result.html#method.unwrap)
-    //! 2. [`unwrap_err`](../../enum.Result.html#method.unwrap_err)
-    //! 3. [`unwrap_fatal_err`](../../enum.Result.html#method.unwrap_fatal_err)
-    //! 4. [`unwrap_local_err`](../../enum.Result.html#method.unwrap_local_err)
-    //! 5. [`unwrap_or`](../../enum.Result.html#method.unwrap_or)
-    //! 6. [`unwrap_or_default`](../../enum.Result.html#method.unwrap_or_default)
-    //! 7. [`unwrap_or_else`](../../enum.Result.html#method.unwrap_or_else)
-    //! 8. [`expect`](../../enum.Result.html#method.expect)
-    //! 9. [`expect_err`](../../enum.Result.html#method.expect_err)
-    //! 10. [`expect_fatal_err`](../../enum.Result.html#method.expect_fatal_err)
-    //! 11. [`expect_local_err`](../../enum.Result.html#method.expect_local_err)
+    //! 1. [`unwrap`](crate::Result::unwrap)
+    //! 2. [`unwrap_err`](crate::Result::unwrap_err)
+    //! 3. [`unwrap_fatal_err`](crate::Result::unwrap_fatal_err)
+    //! 4. [`unwrap_local_err`](crate::Result::unwrap_local_err)
+    //! 5. [`unwrap_or`](crate::Result::unwrap_or)
+    //! 6. [`unwrap_or_default`](crate::Result::unwrap_or_default)
+    //! 7. [`unwrap_or_else`](crate::Result::unwrap_or_else)
+    //! 8. [`expect`](crate::Result::expect)
+    //! 9. [`expect_err`](crate::Result::expect_err)
+    //! 10. [`expect_fatal_err`](crate::Result::expect_fatal_err)
+    //! 11. [`expect_local_err`](crate::Result::expect_local_err)
     //!
     //! ### Copy or clone the contained value
     //!
-    //! 1. [`cloned`](../../enum.Result.html#method.cloned) (for `&woah::Result`)
-    //! 2. [`cloned`](../../enum.Result.html#method.cloned-1) (for `&mut woah::Result`)
-    //! 1. [`copied`](../../enum.Result.html#method.copied) (for `&woah::Result`)
-    //! 2. [`copied`](../../enum.Result.html#method.copied-1) (for `&mut woah::Result`)
+    //! 1. [`cloned`](crate::Result::cloned) (for `&woah::Result`)
+    //! 2. [`cloned`](crate::Result#method.cloned-1) (for `&mut woah::Result`)
+    //! 1. [`copied`](crate::Result::copied) (for `&woah::Result`)
+    //! 2. [`copied`](crate::Result#method.copied-1) (for `&mut woah::Result`)
     //!
     //! ### Transpose when holding an `Option`
     //!
-    //! 1. [`transpose`](../../enum.Result.html#method.transpose)
+    //! 1. [`transpose`](crate::Result::transpose)
     //!
     //! ### Convert to and from a `std::result::Result`
     //!
-    //! 1. [`into_result`](../../enum.Result.html#method.into_result)
-    //! 1. [`into_result_default`](../../enum.Result.html#method.into_result_default)
+    //! 1. [`into_result`](crate::Result::into_result)
+    //! 1. [`into_result_default`](crate::Result::into_result_default)
     //!
     //! ### Use `woah::Result` with the question mark operator
     //!
-    //! 1. [`Try` impl](../../enum.Result.html#impl-Try) (nightly-only, with the `nightly` feature)
+    //! 1. [`Try` impl](crate::Result#trait-implementations) (nightly-only, with the `nightly` feature)
     //!
     //! ### Use `woah::Result` as the return type of `main`
     //!
-    //! 1. [`Termination` impl](../../enum.Result.html#impl-Termination) (with the `std` feature; the
+    //! 1. [`Termination` impl](crate::Result#trait-implementations) (with the `std` feature; the
     //!    impl for `Result<!, L, F>` additionally needs the `nightly` feature)
     //!
     //! ### Build a `woah::Result` from an iterator
     //!
-    //! 1. [`FromIterator` impl](../../enum.Result.html#impl-FromIterator%3CResult%3CA%2C%20L%2C%20F%3E%3E) (nightly-only, with the `nightly` feature)
+    //! 1. [`FromIterator` impl](crate::Result#trait-implementations) (nightly-only, with the `nightly` feature)
     //!
     //! ## Features
     //!
@@ -402,7 +396,7 @@ pub mod docs {
 
 /// A type representing success (`Success`), a local error (`LocalErr`), or a fatal error (`FatalErr`).
 ///
-/// See the [`woah`](index.html) top-level documentation for details.
+/// See the [`woah`](crate) top-level documentation for details.
 #[derive(Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 #[must_use = "this `Result` may be a `LocalErr`, which should be handled, or a `FatalErr`, which should be propagated"]
 pub enum Result<T, L, F> {
@@ -462,8 +456,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Construct either a [`Success`] or [`LocalErr`] variant based on a
     /// `Result`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -483,7 +477,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Construct the [`Success`] variant based on some success value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -500,7 +494,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Construct the [`LocalErr`] variant based on some error.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -517,7 +511,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Construct the [`FatalErr`] variant based on some error.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -534,7 +528,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -558,8 +552,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is [`LocalErr`] or [`FatalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -583,7 +577,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is [`LocalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -607,7 +601,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is [`FatalErr`].
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -631,7 +625,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`Success`] whose value matches a predicate.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -662,8 +656,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] whose value matches a
     /// predicate.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -706,7 +700,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`LocalErr`] whose value matches a predicate.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -736,7 +730,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`FatalErr`] whose value matches a predicate.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -766,7 +760,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`Success`] value containing the given value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Examples
     ///
@@ -793,8 +787,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] value containing the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Examples
     ///
@@ -828,7 +822,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`LocalErr`] value containing the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Examples
     ///
@@ -855,7 +849,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Returns `true` if the result is a [`FatalErr`] value containing the given value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Examples
     ///
@@ -882,7 +876,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`Success`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -908,8 +902,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`LocalErr`] or [`FatalErr`] variant to an `Option<Either<_, _>>`, otherwise to a `None`.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -938,7 +932,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`LocalErr`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -964,7 +958,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Convert a [`FatalErr`] variant to an `Option::Some`, otherwise to a `None`.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1040,7 +1034,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1072,7 +1066,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// Otherwise return the provided value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1103,7 +1097,7 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// Otherwise run one of the provided default functions.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1135,8 +1129,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1181,7 +1175,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1211,7 +1205,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`FatalErr`].
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1241,7 +1235,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`Success`], without modifying it.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1273,8 +1267,8 @@ impl<T, L, F> Result<T, L, F> {
     /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], without
     /// modifying it.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1316,7 +1310,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`LocalErr`], without modifying it.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1347,7 +1341,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Apply a function to the contained value if it's a [`FatalErr`], without modifying it.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1378,7 +1372,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Get an iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1401,7 +1395,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Get a mutable iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1432,7 +1426,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`Success`], replace it with `res`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1454,7 +1448,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`Success`], replace it with the result of `op`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1486,8 +1480,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1521,7 +1515,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`], replace them with the given value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1550,7 +1544,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`FatalErr`], replace them with the given value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1579,8 +1573,8 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`] or [`FatalErr`], replace them with the appropriate function result.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1614,7 +1608,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`LocalErr`], replace it with the appropriate function result.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -1646,7 +1640,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// If it's a [`FatalErr`], replace it with the appropriate function result.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1678,7 +1672,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return inner value if it's a [`Success`], or `alt` otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1704,7 +1698,7 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return inner value if it's a [`Success`], or the appropriate function otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1743,7 +1737,7 @@ where
 {
     /// Copy the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1769,7 +1763,7 @@ where
 {
     /// Copy the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1795,7 +1789,7 @@ where
 {
     /// Clone the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1821,7 +1815,7 @@ where
 {
     /// Clone the value if it's a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1848,7 +1842,7 @@ where
 {
     /// Get the value if it's a [`Success`], panic otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1869,7 +1863,7 @@ where
 
     /// Get the value if it's a [`Success`], panic with a `msg` otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -1898,8 +1892,8 @@ where
 {
     /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic otherwise.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1924,8 +1918,8 @@ where
 
     /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic with a `msg` otherwise.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1955,9 +1949,9 @@ where
     ///
     /// This panics on a [`FatalErr`] as well as on a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -1980,9 +1974,9 @@ where
     ///
     /// This panics on a [`FatalErr`] as well as on a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2011,9 +2005,9 @@ where
     ///
     /// This panics on a [`LocalErr`] as well as on a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2036,9 +2030,9 @@ where
     ///
     /// This panics on a [`LocalErr`] as well as on a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2060,14 +2054,14 @@ where
 impl<T, L, F> Result<T, L, F> {
     /// Return the contained [`Success`] value, without checking that the value is a [`Success`].
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Safety
     ///
     /// Calling this on a [`LocalErr`] or [`FatalErr`] is undefined behavior.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2089,14 +2083,14 @@ impl<T, L, F> Result<T, L, F> {
     /// Return the contained [`LocalErr`] or [`FatalErr`] value, without checking that the value
     /// is one of them.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Safety
     ///
     /// Calling this on a [`Success`] is undefined behavior.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -2123,14 +2117,14 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return the contained [`LocalErr`] value, without checking that the value is a [`LocalErr`].
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Safety
     ///
     /// Calling this on a [`Success`] or [`FatalErr`] is undefined behavior.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2151,14 +2145,14 @@ impl<T, L, F> Result<T, L, F> {
 
     /// Return the contained [`FatalErr`] value, without checking that the value is a [`FatalErr`].
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Safety
     ///
     /// Calling this on a [`Success`] or [`LocalErr`] is undefined behavior.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -2184,7 +2178,7 @@ where
 {
     /// Get the value if it's a [`Success`], or `T`'s default value otherwise.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -2213,7 +2207,7 @@ where
     /// This discards the local error, on the grounds that it has been handled; only the fatal
     /// error survives the conversion.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -2250,9 +2244,9 @@ where
     /// The bounds mean this is only callable when both error types convert into the never type,
     /// so the [`LocalErr`] and [`FatalErr`] variants cannot exist.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`Success`]: crate::Result::Success
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2278,7 +2272,7 @@ where
 {
     /// Convert to a `Result` holding a reference to the dereferenced [`Success`] value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -2309,8 +2303,8 @@ where
     /// Convert to a `Result` holding references to the dereferenced [`LocalErr`] and
     /// [`FatalErr`] values.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2339,7 +2333,7 @@ where
 {
     /// Convert to a `Result` holding a reference to the dereferenced [`LocalErr`] value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -2368,7 +2362,7 @@ where
 {
     /// Convert to a `Result` holding a reference to the dereferenced [`FatalErr`] value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2397,7 +2391,7 @@ where
 {
     /// Convert to a `Result` holding a mutable reference to the dereferenced [`Success`] value.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -2430,8 +2424,8 @@ where
     /// Convert to a `Result` holding mutable references to the dereferenced [`LocalErr`] and
     /// [`FatalErr`] values.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2464,7 +2458,7 @@ where
 {
     /// Convert to a `Result` holding a mutable reference to the dereferenced [`LocalErr`] value.
     ///
-    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`LocalErr`]: crate::Result::LocalErr
     ///
     /// # Example
     ///
@@ -2495,7 +2489,7 @@ where
 {
     /// Convert to a `Result` holding a mutable reference to the dereferenced [`FatalErr`] value.
     ///
-    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     ///
     /// # Example
     ///
@@ -2523,7 +2517,7 @@ where
 impl<T, L, F> Result<Result<T, L, F>, L, F> {
     /// Flatten a `Result` nested inside the [`Success`] variant of another `Result`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
@@ -2558,7 +2552,7 @@ impl<T, L, F> Result<Result<T, L, F>, L, F> {
 impl<T, L, F> Result<Option<T>, L, F> {
     /// Transpose a `Result` of an `Option` into an `Option` of a `Result`.
     ///
-    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`Success`]: crate::Result::Success
     ///
     /// # Example
     ///
