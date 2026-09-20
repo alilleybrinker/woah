@@ -1894,6 +1894,23 @@ where
     L: Debug,
     F: Debug,
 {
+    /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic otherwise.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_err(), Left(0));
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(1);
+    /// assert_eq!(r.unwrap_err(), Right(1));
+    /// ```
     #[inline]
     pub fn unwrap_err(self) -> Either<L, F> {
         match self {
@@ -1903,6 +1920,20 @@ where
         }
     }
 
+    /// Get the error if it's a [`LocalErr`] or [`FatalErr`], panic with a `msg` otherwise.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::Right;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.expect_err("should be an error"), Right(0));
+    /// ```
     #[inline]
     pub fn expect_err(self, msg: &str) -> Either<L, F> {
         match self {
@@ -1918,6 +1949,22 @@ where
     T: Debug,
     F: Debug,
 {
+    /// Get the error if it's a [`LocalErr`], panic otherwise.
+    ///
+    /// This panics on a [`FatalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.unwrap_local_err(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_local_err(self) -> L {
         match self {
@@ -1927,6 +1974,22 @@ where
         }
     }
 
+    /// Get the error if it's a [`LocalErr`], panic with a `msg` otherwise.
+    ///
+    /// This panics on a [`FatalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(r.expect_local_err("should be a local error"), 0);
+    /// ```
     #[inline]
     pub fn expect_local_err(self, msg: &str) -> L {
         match self {
@@ -1942,6 +2005,22 @@ where
     T: Debug,
     L: Debug,
 {
+    /// Get the error if it's a [`FatalErr`], panic otherwise.
+    ///
+    /// This panics on a [`LocalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.unwrap_fatal_err(), 0);
+    /// ```
     #[inline]
     pub fn unwrap_fatal_err(self) -> F {
         match self {
@@ -1951,6 +2030,22 @@ where
         }
     }
 
+    /// Get the error if it's a [`FatalErr`], panic with a `msg` otherwise.
+    ///
+    /// This panics on a [`LocalErr`] as well as on a [`Success`].
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let r: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(r.expect_fatal_err("should be a fatal error"), 0);
+    /// ```
     #[inline]
     pub fn expect_fatal_err(self, msg: &str) -> F {
         match self {
