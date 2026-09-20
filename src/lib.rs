@@ -626,6 +626,141 @@ impl<T, L, F> Result<T, L, F> {
         matches!(self, FatalErr(_))
     }
 
+    /// Returns `true` if the result is a [`Success`] whose value matches a predicate.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<u32, &str, &str> = Success(2);
+    /// assert_eq!(x.is_success_and(|t| t > 1), true);
+    ///
+    /// let x: Result<u32, &str, &str> = Success(0);
+    /// assert_eq!(x.is_success_and(|t| t > 1), false);
+    ///
+    /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
+    /// assert_eq!(x.is_success_and(|t| t > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_success_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(T) -> bool,
+    {
+        match self {
+            Success(t) => f(t),
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] whose value matches a
+    /// predicate.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{self, Left, Right};
+    ///
+    /// fn is_big(err: Either<u32, u32>) -> bool {
+    ///     match err {
+    ///         Left(l) => l > 1,
+    ///         Right(f) => f > 1,
+    ///     }
+    /// }
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_err_and(is_big), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_err_and(is_big), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.is_err_and(is_big), false);
+    ///
+    /// let x: Result<&str, u32, u32> = Success("all good");
+    /// assert_eq!(x.is_err_and(is_big), false);
+    /// ```
+    #[cfg(feature = "either")]
+    #[must_use]
+    #[inline]
+    pub fn is_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(Either<L, F>) -> bool,
+    {
+        match self {
+            Success(_) => false,
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+    }
+
+    /// Returns `true` if the result is a [`LocalErr`] whose value matches a predicate.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), true);
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), false);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_local_err_and(|l| l > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_local_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(L) -> bool,
+    {
+        match self {
+            LocalErr(err) => f(err),
+            _ => false,
+        }
+    }
+
+    /// Returns `true` if the result is a [`FatalErr`] whose value matches a predicate.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(2);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), true);
+    ///
+    /// let x: Result<&str, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), false);
+    ///
+    /// let x: Result<&str, u32, u32> = LocalErr(2);
+    /// assert_eq!(x.is_fatal_err_and(|f| f > 1), false);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn is_fatal_err_and<G>(self, f: G) -> bool
+    where
+        G: FnOnce(F) -> bool,
+    {
+        match self {
+            FatalErr(err) => f(err),
+            _ => false,
+        }
+    }
+
     /// Returns `true` if the result is a [`Success`] value containing the given value.
     ///
     /// [`Success`]: enum.Result.html#variant.Success
