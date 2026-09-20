@@ -1101,6 +1101,143 @@ impl<T, L, F> Result<T, L, F> {
         }
     }
 
+    /// Apply a function to the contained value if it's a [`Success`], without modifying it.
+    ///
+    /// [`Success`]: enum.Result.html#variant.Success
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.inspect(|t| seen = Some(*t)), Success(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(1);
+    /// assert_eq!(x.inspect(|t| seen = Some(*t)), LocalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&T),
+    {
+        if let Success(t) = &self {
+            f(t);
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`] or [`FatalErr`], without
+    /// modifying it.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    /// use either::Either::{Left, Right};
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(1);
+    /// let x = x.inspect_err(|e| {
+    ///     seen = Some(match e {
+    ///         Left(l) => *l,
+    ///         Right(f) => *f,
+    ///     })
+    /// });
+    ///
+    /// assert_eq!(x, FatalErr(1));
+    /// assert_eq!(seen, Some(1));
+    ///
+    /// let x: Result<u32, u32, u32> = Success(0);
+    /// assert_eq!(x.inspect_err(|_| seen = None), Success(0));
+    /// assert_eq!(seen, Some(1));
+    /// ```
+    #[cfg(feature = "either")]
+    #[inline]
+    pub fn inspect_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(Either<&L, &F>),
+    {
+        match &self {
+            Success(_) => {}
+            LocalErr(err) => f(Left(err)),
+            FatalErr(err) => f(Right(err)),
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`LocalErr`], without modifying it.
+    ///
+    /// [`LocalErr`]: enum.Result.html#variant.LocalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(0);
+    /// assert_eq!(x.inspect_local_err(|l| seen = Some(*l)), LocalErr(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(1);
+    /// assert_eq!(x.inspect_local_err(|l| seen = Some(*l)), FatalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect_local_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&L),
+    {
+        if let LocalErr(err) = &self {
+            f(err);
+        }
+
+        self
+    }
+
+    /// Apply a function to the contained value if it's a [`FatalErr`], without modifying it.
+    ///
+    /// [`FatalErr`]: enum.Result.html#variant.FatalErr
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use woah::prelude::*;
+    ///
+    /// let mut seen = None;
+    ///
+    /// let x: Result<u32, u32, u32> = FatalErr(0);
+    /// assert_eq!(x.inspect_fatal_err(|f| seen = Some(*f)), FatalErr(0));
+    /// assert_eq!(seen, Some(0));
+    ///
+    /// let x: Result<u32, u32, u32> = LocalErr(1);
+    /// assert_eq!(x.inspect_fatal_err(|f| seen = Some(*f)), LocalErr(1));
+    /// assert_eq!(seen, Some(0));
+    /// ```
+    #[inline]
+    pub fn inspect_fatal_err<G>(self, f: G) -> Self
+    where
+        G: FnOnce(&F),
+    {
+        if let FatalErr(err) = &self {
+            f(err);
+        }
+
+        self
+    }
+
     /// Get an iterator over the inner value in the `Result`, if it's a [`Success`].
     ///
     /// [`Success`]: enum.Result.html#variant.Success
