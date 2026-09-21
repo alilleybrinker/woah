@@ -438,6 +438,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let result: StdResult<StdResult<i64, &str>, &str> = LocalErr("a local error").into_nested_result();
     /// assert_eq!(result, Ok(Err("a local error")));
     /// ```
+    #[doc(alias("into_result", "into_result_default"))]
     #[inline]
     pub fn into_nested_result(self) -> StdResult<StdResult<T, L>, F> {
         self.into()
@@ -466,6 +467,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let result: Result<i64, &str, &str> = Result::from_local_result(Ok(0));
     /// assert_eq!(result, Success(0));
     /// ```
+    #[doc(alias = "from_result")]
     #[inline]
     pub fn from_local_result(ok: StdResult<T, L>) -> Self {
         match ok {
@@ -569,6 +571,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let fatal_err: Result<i64, &str, &str> = Result::from_fatal_err("a fatal error");
     /// assert_eq!(fatal_err, FatalErr("a fatal error"));
     /// ```
+    #[doc(alias = "from_fatal_error")]
     #[inline]
     pub const fn from_fatal_err(err: F) -> Self {
         FatalErr(err)
@@ -592,6 +595,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<i32, &str, &str> = FatalErr("Another error message");
     /// assert_eq!(x.is_success(), false);
     /// ```
+    #[doc(alias = "is_ok")]
     #[must_use = "if you intended to assert that this is ok, consider `.unwrap()` instead"]
     #[inline]
     pub const fn is_success(&self) -> bool {
@@ -689,6 +693,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
     /// assert_eq!(x.is_success_and(|t| t > 1), false);
     /// ```
+    #[doc(alias("is_ok_and", "contains"))]
     #[must_use]
     #[inline]
     pub fn is_success_and<G>(self, f: G) -> bool
@@ -732,6 +737,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<&str, u32, u32> = Success("all good");
     /// assert_eq!(x.is_err_and(is_big), false);
     /// ```
+    #[doc(alias = "contains_err")]
     #[cfg(feature = "either")]
     #[must_use]
     #[inline]
@@ -764,6 +770,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<&str, u32, u32> = FatalErr(2);
     /// assert_eq!(x.is_local_err_and(|l| l > 1), false);
     /// ```
+    #[doc(alias = "contains_local_err")]
     #[must_use]
     #[inline]
     pub fn is_local_err_and<G>(self, f: G) -> bool
@@ -794,6 +801,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<&str, u32, u32> = LocalErr(2);
     /// assert_eq!(x.is_fatal_err_and(|f| f > 1), false);
     /// ```
+    #[doc(alias = "contains_fatal_err")]
     #[must_use]
     #[inline]
     pub fn is_fatal_err_and<G>(self, f: G) -> bool
@@ -824,6 +832,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let x: Result<&str, &str, u32> = FatalErr(2);
     /// assert_eq!(x.success(), None);
     /// ```
+    #[doc(alias = "ok")]
     #[inline]
     pub fn success(self) -> Option<T> {
         match self {
@@ -1644,6 +1653,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let r: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(r.or_local_err(l), FatalErr(0));
     /// ```
+    #[doc(alias = "or_local")]
     #[inline]
     pub fn or_local_err<M>(self, res: Result<T, M, F>) -> Result<T, M, F> {
         match self {
@@ -1673,6 +1683,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let r: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(r.or_fatal_err(f), FatalErr(2));
     /// ```
+    #[doc(alias = "or_fatal")]
     #[inline]
     pub fn or_fatal_err<G>(self, res: Result<T, L, G>) -> Result<T, L, G> {
         match self {
@@ -1737,6 +1748,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let r: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(r.or_else_local_err(l), FatalErr(0));
     /// ```
+    #[doc(alias = "or_else_local")]
     #[inline]
     pub fn or_else_local_err<O, M>(self, op: O) -> Result<T, M, F>
     where
@@ -1769,6 +1781,7 @@ impl<T, L, F> Result<T, L, F> {
     /// let r: Result<u32, u32, u32> = FatalErr(0);
     /// assert_eq!(r.or_else_fatal_err(f), FatalErr(2));
     /// ```
+    #[doc(alias = "or_else_fatal")]
     #[inline]
     pub fn or_else_fatal_err<O, G>(self, op: O) -> Result<T, L, G>
     where
@@ -2376,6 +2389,7 @@ where
     /// let r: Result<u32, Timeout, Fatal> = FatalErr(Fatal::Unreachable);
     /// assert_eq!(r.into_merged_result(), Err(Fatal::Unreachable));
     /// ```
+    #[doc(alias = "into_result_merged")]
     #[inline]
     pub fn into_merged_result(self) -> StdResult<T, F> {
         match self {
@@ -2409,6 +2423,7 @@ where
     /// let r: Result<u32, !, !> = Success(5);
     /// assert_eq!(r.into_success(), 5);
     /// ```
+    #[doc(alias = "into_ok")]
     #[inline]
     pub fn into_success(self) -> T {
         match self {
