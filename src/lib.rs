@@ -108,21 +108,6 @@ pub mod docs {
     //! `woah::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
     //! easy to navigate. To help, this page explains them in groups of similar methods.
     //!
-    //! [is]: #see-if-the-result-is-a-particular-variant
-    //! [get]: #get-an-option-if-a-variant-is-present
-    //! [as_ref]: #reference-the-contained-value
-    //! [as_deref]: #dereference-the-contained-value
-    //! [map]: #map-over-the-contained-value
-    //! [iter]: #iterate-over-the-contained-value
-    //! [compose]: #compose-results
-    //! [unwrap]: #unwrap-the-result
-    //! [clone]: #copy-or-clone-the-contained-value
-    //! [transpose]: #transpose-when-holding-an-option
-    //! [convert]: #convert-to-and-from-a-stdresultresult
-    //! [try]: #use-woahresult-with-the-question-mark-operator
-    //! [main]: #use-woahresult-as-the-return-type-of-main
-    //! [from_iter]: #build-a-woahresult-from-an-iterator
-    //!
     //! ## Methods
     //!
     //! ### See if the `Result` is a particular variant
@@ -2915,7 +2900,7 @@ unsafe impl<T> TrustedLen for IntoIter<T> {}
 
 /// An iterator over a reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
-pub struct Iter<'a, T: 'a> {
+pub struct Iter<'a, T> {
     inner: Option<&'a T>,
 }
 
@@ -2950,7 +2935,7 @@ unsafe impl<'a, T> TrustedLen for Iter<'a, T> {}
 
 /// An iterator over a mutable reference to the `Success` variant of a `woah::Result`.
 #[derive(Debug)]
-pub struct IterMut<'a, T: 'a> {
+pub struct IterMut<'a, T> {
     inner: Option<&'a mut T>,
 }
 

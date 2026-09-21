@@ -172,6 +172,11 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 - Every public item is documented with an example, and `missing_docs` is now
   denied.
+- The `docs` module no longer carries fourteen orphaned link definitions, left
+  over from a table of contents that was removed at some point; nothing
+  referenced any of them. `Iter` and `IterMut` also drop their explicit
+  `T: 'a` bounds, which have been implied since Rust 1.31 and only added noise
+  to the rendered signatures.
 
 ## Continuous integration
 
