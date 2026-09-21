@@ -75,8 +75,14 @@ use std::process::{ExitCode, Termination};
 pub mod prelude {
     //! A collection of re-exports to make `woah::Result` the standard result type.
     //!
-    //! This keeps `std::result::Result` available as `StdResult`, and imports additional types and traits
-    //! to make `woah::Result` fully-featured, based on feature flags.
+    //! This shadows `std::result::Result`, keeping it available as `StdResult`, and imports the
+    //! variant names so they can be written unqualified.
+    //!
+    //! It deliberately re-exports very little else. `?` needs no trait in scope, being desugared
+    //! by the compiler, and `collect`, `sum` and `product` are `Iterator` methods, so `Try`,
+    //! `FromResidual`, `FromIterator`, `Sum` and `Product` do not need importing to use any of
+    //! them on a `woah::Result`. A prelude meant for glob import should not put names in scope
+    //! that nothing here requires.
 
     // Replace `std::result::Result` with `woah::Result`.
     //
@@ -85,33 +91,10 @@ pub mod prelude {
     pub use crate::{Result, Result::FatalErr, Result::LocalErr, Result::Success};
     pub use core::result::Result as StdResult;
 
-    // Import the Try and FromResidual traits.
-    #[cfg(feature = "nightly")]
-    pub use core::ops::{FromResidual, Try};
-
-    // Import the ControlFlow struct.
-    #[cfg(feature = "nightly")]
-    pub use core::ops::ControlFlow;
-
-    // Import the Termination trait.
+    // Unlike the traits above, this one is load-bearing: `fn main() -> woah::Result<..>` works
+    // without it, but calling `report` directly does not.
     #[cfg(feature = "std")]
     pub use std::process::Termination;
-
-    // Import the FromIterator trait.
-    #[cfg(feature = "nightly")]
-    pub use core::iter::FromIterator;
-
-    // Import the Product trait.
-    #[cfg(feature = "nightly")]
-    pub use core::iter::Product;
-
-    // Import the Sum trait.
-    #[cfg(feature = "nightly")]
-    pub use core::iter::Sum;
-
-    // Import the TrustedLen trait.
-    #[cfg(feature = "nightly")]
-    pub use core::iter::TrustedLen;
 }
 
 pub mod docs {

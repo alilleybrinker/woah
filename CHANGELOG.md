@@ -151,6 +151,15 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   `unwrap_or_default`, which returns `T` and discards both errors, is
   unchanged.
 
+- **Breaking:** seven std re-exports from `woah::prelude`: `Try`,
+  `FromResidual`, `ControlFlow`, `FromIterator`, `Sum`, `Product` and
+  `TrustedLen`. None was needed to use the crate -- `?` is desugared by the
+  compiler and needs no trait in scope, and `collect`, `sum` and `product` are
+  `Iterator` methods -- so a prelude meant for glob import was putting seven
+  std names into every caller's namespace for nothing. `Termination` stays,
+  because calling `report` directly does need it in scope. Anything that
+  relied on the glob for these can import them from `core` or `std` directly.
+
 - The stale `control_flow_enum` and `never_type` feature gates, both of which
   named features that have since stabilized.
 
