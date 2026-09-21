@@ -126,7 +126,6 @@ pub mod docs {
     //! easy to navigate. To help, this page explains them in groups of similar methods.
     //!
     //! [is]: #see-if-the-result-is-a-particular-variant
-    //! [contains]: #see-if-the-result-contains-a-value
     //! [get]: #get-an-option-if-a-variant-is-present
     //! [as_ref]: #reference-the-contained-value
     //! [as_deref]: #dereference-the-contained-value
@@ -151,18 +150,6 @@ pub mod docs {
     //! 2. [`is_err`](crate::Result::is_err)
     //! 3. [`is_local_err`](crate::Result::is_local_err)
     //! 4. [`is_fatal_err`](crate::Result::is_fatal_err)
-    //!
-    //! ### See if the `Result` contains a value
-    //!
-    //! These methods check if the `Result` contains a particular value.
-    //!
-    //! 1. [`contains`](crate::Result::contains)
-    #![cfg_attr(
-        feature = "either",
-        doc = "2. [`contains_err`](crate::Result::contains_err)"
-    )]
-    //! 3. [`contains_local_err`](crate::Result::contains_local_err)
-    //! 4. [`contains_fatal_err`](crate::Result::contains_fatal_err)
     //!
     //! ### Get an `Option` if a variant is present
     //!
@@ -846,122 +833,6 @@ impl<T, L, F> Result<T, L, F> {
             FatalErr(err) => f(err),
             _ => false,
         }
-    }
-
-    /// Returns `true` if the result is a [`Success`] value containing the given value.
-    ///
-    /// [`Success`]: crate::Result::Success
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let x: Result<u32, &str, &str> = Success(2);
-    /// assert_eq!(x.contains(&2), true);
-    ///
-    /// let x: Result<u32, &str, &str> = Success(3);
-    /// assert_eq!(x.contains(&2), false);
-    ///
-    /// let x: Result<u32, &str, &str> = LocalErr("Some error message");
-    /// assert_eq!(x.contains(&2), false);
-    /// ```
-    #[must_use]
-    #[inline]
-    pub fn contains<U>(&self, x: &U) -> bool
-    where
-        U: PartialEq<T>,
-    {
-        matches!(self, Success(t) if *x == *t)
-    }
-
-    /// Returns `true` if the result is a [`LocalErr`] or [`FatalErr`] value containing the given value.
-    ///
-    /// [`LocalErr`]: crate::Result::LocalErr
-    /// [`FatalErr`]: crate::Result::FatalErr
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    /// use either::Either;
-    ///
-    /// let x: Result<&str, u32, &str> = LocalErr(2);
-    /// let check: Either<_, &&str> = Either::Left(&2);
-    /// assert_eq!(x.contains_err(check), true);
-    ///
-    /// let x: Result<&str, &str, u32> = FatalErr(3);
-    /// let check: Either<&&str, _> = Either::Right(&2);
-    /// assert_eq!(x.contains_err(check), false);
-    ///
-    /// let x: Result<u32, &str, &str> = Success(0);
-    /// let check: Either<&&str, &&str> = Either::Left(&"");
-    /// assert_eq!(x.contains_err(check), false);
-    /// ```
-    #[cfg(feature = "either")]
-    #[must_use]
-    #[inline]
-    pub fn contains_err<U, Y>(&self, e: Either<&U, &Y>) -> bool
-    where
-        U: PartialEq<L>,
-        Y: PartialEq<F>,
-    {
-        matches!((self, e), (LocalErr(err), Left(e)) if *e == *err)
-            || matches!((self, e), (FatalErr(err), Right(e)) if *e == *err)
-    }
-
-    /// Returns `true` if the result is a [`LocalErr`] value containing the given value.
-    ///
-    /// [`LocalErr`]: crate::Result::LocalErr
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let x: Result<&str, u32, &str> = LocalErr(2);
-    /// assert_eq!(x.contains_local_err(&2), true);
-    ///
-    /// let x: Result<&str, u32, &str> = LocalErr(3);
-    /// assert_eq!(x.contains_local_err(&2), false);
-    ///
-    /// let x: Result<&str, u32, &str> = Success("Some error message");
-    /// assert_eq!(x.contains_local_err(&2), false);
-    /// ```
-    #[must_use]
-    #[inline]
-    pub fn contains_local_err<E>(&self, e: &E) -> bool
-    where
-        E: PartialEq<L>,
-    {
-        matches!(self, LocalErr(err) if *e == *err)
-    }
-
-    /// Returns `true` if the result is a [`FatalErr`] value containing the given value.
-    ///
-    /// [`FatalErr`]: crate::Result::FatalErr
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let x: Result<&str, &str, u32> = FatalErr(2);
-    /// assert_eq!(x.contains_fatal_err(&2), true);
-    ///
-    /// let x: Result<&str, &str, u32> = FatalErr(3);
-    /// assert_eq!(x.contains_fatal_err(&2), false);
-    ///
-    /// let x: Result<&str, &str, u32> = Success("Some error message");
-    /// assert_eq!(x.contains_fatal_err(&2), false);
-    /// ```
-    #[must_use]
-    #[inline]
-    pub fn contains_fatal_err<E>(&self, e: &E) -> bool
-    where
-        E: PartialEq<F>,
-    {
-        matches!(self, FatalErr(err) if *e == *err)
     }
 
     /// Convert a [`Success`] variant to an `Option::Some`, otherwise to a `None`.

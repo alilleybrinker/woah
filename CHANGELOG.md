@@ -108,6 +108,23 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Removed
 
+- **Breaking:** `contains`, `contains_err`, `contains_local_err` and
+  `contains_fatal_err`. These mirrored `Result::contains`, which std never
+  stabilized and has since removed outright -- it is not in std even on
+  nightly -- on the grounds that `is_ok_and` subsumes it. The `is_*_and`
+  family added in this release subsumes these the same way. Where the old
+  methods borrowed and these consume, add `as_ref`:
+
+  ```rust
+  // was
+  result.contains(&2);
+  result.contains_local_err(&"boom");
+
+  // now
+  result.as_ref().is_success_and(|t| *t == 2);
+  result.as_ref().is_local_err_and(|e| *e == "boom");
+  ```
+
 - The stale `control_flow_enum` and `never_type` feature gates, both of which
   named features that have since stabilized.
 
