@@ -18,15 +18,27 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - `is_success_and`, `is_err_and`, `is_local_err_and` and `is_fatal_err_and`,
   for testing a contained value against a predicate.
 - `flatten`, collapsing a `Result` nested in another's `Success` variant.
-- `into_result_merged`, converting into a `std::result::Result<T, F>` by merging both
+- `from_nested_result`, constructing any of the three variants from the nested
+  `Result<Result<T, L>, F>`. This is the inverse of `into_nested_result`, which
+  previously existed only as a `From` impl with no named counterpart, so the
+  named conversions could go one way but not back.
+- `into_merged_result`, converting into a `std::result::Result<T, F>` by merging both
   error channels into one, escalating a `LocalErr` through `F: From<L>`. This is
   the transform #7 asked for, which `flatten` -- the direct analogue of std's
   method -- does not perform.
-- `map_err_or`, `map_err_or_else`, `map_local_err_or`, `map_local_err_or_else`,
-  `map_fatal_err_or` and `map_fatal_err_or_else`. These stand to `map_err`,
-  `map_local_err` and `map_fatal_err` as `map_or` and `map_or_else` stand to
-  `map`: they unwrap to a value rather than returning a `Result`. The `docs`
-  module had listed all six since 0.4.x, but they were never implemented.
+- `map_err_or`, `map_err_or_else`, `map_local_err_or_else` and
+  `map_fatal_err_or_else`. These stand to `map_err`, `map_local_err` and
+  `map_fatal_err` as `map_or` and `map_or_else` stand to `map`: they unwrap to
+  a value rather than returning a `Result`. The `docs` module had listed these
+  since 0.4.x, but they were never implemented.
+
+  Two of the six it listed are deliberately *not* here.
+  `map_local_err_or(default, f)` would have returned the default for a
+  `FatalErr` as well as a `Success`, silently dropping a fatal error and making
+  it indistinguishable from success; `map_fatal_err_or` did the same to a local
+  error. In a crate whose premise is that fatal errors do not get swallowed,
+  that is the wrong default shape for an API to have. The `_or_else` forms give
+  every variant its own function and lose nothing.
 - `unwrap_unchecked`, `unwrap_err_unchecked`, `unwrap_local_err_unchecked` and
   `unwrap_fatal_err_unchecked`. These are `unsafe`: calling one on a variant it
   does not name is undefined behavior.
@@ -41,6 +53,26 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Changed
 
+- **Breaking:** the named conversions to and from `std::result::Result` say which
+  one they deal with. `into_result` is now `into_nested_result`, for the nested
+  `Result<Result<T, L>, F>` it returns, and `from_result` is now
+  `from_local_result`, for the `Result<T, L>` carrying the local error that it
+  takes -- the shape `?` hands back. The old names looked like inverses and were
+  not: round-tripping them nests one layer deeper each time. The `From` impls,
+  which are unambiguous because the types differ, are unchanged.
+- **Breaking:** `or_local`, `or_fatal`, `or_else_local` and `or_else_fatal` are
+  renamed `or_local_err`, `or_fatal_err`, `or_else_local_err` and
+  `or_else_fatal_err`. They were the only four methods naming a variant without
+  the `_err` suffix the other 28 use.
+- **Breaking:** `into_result_merged` is renamed `into_merged_result`, so all
+  four named conversions read the same way -- `from_local_result`,
+  `from_nested_result`, `into_nested_result`, `into_merged_result`. The
+  `into_result_` prefix had made sense when `into_result` and
+  `into_result_default` existed alongside it; both are now gone.
+- **Breaking:** `from_fatal_error` is renamed `from_fatal_err`, so the
+  constructors read `from_success` / `from_local_err` / `from_fatal_err`. Every
+  other method in the crate spells this variant `fatal_err` -- 14 of them --
+  and this was the lone exception.
 - The `Termination` impl is now generic over the success type, as std's impl for
   `std::result::Result` is: any `T: Termination` works, rather than only `()`.
   This replaces the two previous impls, for `Result<(), L, F>` and
@@ -53,7 +85,7 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 - **Breaking:** the crate is now on the 2024 edition.
 - The `nightly` feature now requires a nightly toolchain from Rust 1.100 or
   later, since it no longer gates the never type behind `#![feature]`.
-- `from_success`, `from_local_err`, `from_fatal_error`, `is_success`, `is_err`,
+- `from_success`, `from_local_err`, `from_fatal_err`, `is_success`, `is_err`,
   `is_local_err`, `is_fatal_err`, `as_ref`, `as_mut`, `iter` and `iter_mut` are
   now `const fn`.
 - The `rand` dev-dependency used by the examples moved from 0.8 to 0.10.
@@ -89,6 +121,50 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 ### Removed
 
+- **Breaking:** `contains`, `contains_err`, `contains_local_err` and
+  `contains_fatal_err`. These mirrored `Result::contains`, which std never
+  stabilized and has since removed outright -- it is not in std even on
+  nightly -- on the grounds that `is_ok_and` subsumes it. The `is_*_and`
+  family added in this release subsumes these the same way. Where the old
+  methods borrowed and these consume, add `as_ref`:
+
+  ```rust
+  // was
+  result.contains(&2);
+  result.contains_local_err(&"boom");
+
+  // now
+  result.as_ref().is_success_and(|t| *t == 2);
+  result.as_ref().is_local_err_and(|e| *e == "boom");
+  ```
+
+- **Breaking:** `into_result_default`. It replaced a `LocalErr` with `T`'s
+  default value, so a handled error and a genuine success came back
+  indistinguishable as `Ok`. Unlike the other removals in this release, this
+  method shipped in 0.4.x, so this one does cost existing callers. The
+  behavior is still available by taking the nested form and mapping over it,
+  which is equivalent on all three variants:
+
+  ```rust
+  // was
+  result.into_result_default();
+
+  // now
+  result.into_nested_result().map(|inner| inner.unwrap_or_default());
+  ```
+
+  `unwrap_or_default`, which returns `T` and discards both errors, is
+  unchanged.
+
+- **Breaking:** seven std re-exports from `woah::prelude`: `Try`,
+  `FromResidual`, `ControlFlow`, `FromIterator`, `Sum`, `Product` and
+  `TrustedLen`. None was needed to use the crate -- `?` is desugared by the
+  compiler and needs no trait in scope, and `collect`, `sum` and `product` are
+  `Iterator` methods -- so a prelude meant for glob import was putting seven
+  std names into every caller's namespace for nothing. `Termination` stays,
+  because calling `report` directly does need it in scope. Anything that
+  relied on the glob for these can import them from `core` or `std` directly.
+
 - The stale `control_flow_enum` and `never_type` feature gates, both of which
   named features that have since stabilized.
 
@@ -96,6 +172,21 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 - Every public item is documented with an example, and `missing_docs` is now
   denied.
+- The `docs` module has a "Coming from `std::result::Result`" section: a table
+  mapping std's names to this crate's, and the reason they differ. The success
+  variant is `Success` rather than `Ok` so that `Ok` and `Err` keep meaning
+  std's, in these docs and in code that globs the prelude; methods are named
+  after the variants they concern, as std's are.
+- Rustdoc search aliases via `#[doc(alias)]`, so searching the documentation
+  for a std name finds this crate's equivalent -- `is_ok` finds `is_success`,
+  `ok` finds `success` -- and searching for a name this release renamed or
+  removed finds what replaced it. Without them rustdoc offered no suggestion
+  for `is_ok` and pointed `ok` at `or`, a different operation.
+- The `docs` module no longer carries fourteen orphaned link definitions, left
+  over from a table of contents that was removed at some point; nothing
+  referenced any of them. `Iter` and `IterMut` also drop their explicit
+  `T: 'a` bounds, which have been implied since Rust 1.31 and only added noise
+  to the rendered signatures.
 
 ## Continuous integration
 

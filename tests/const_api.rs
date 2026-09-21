@@ -10,7 +10,7 @@ use woah::{Iter, IterMut};
 
 const SUCCESS: Result<u32, &str, &str> = Result::from_success(0);
 const LOCAL: Result<u32, &str, &str> = Result::from_local_err("local");
-const FATAL: Result<u32, &str, &str> = Result::from_fatal_error("fatal");
+const FATAL: Result<u32, &str, &str> = Result::from_fatal_err("fatal");
 
 // Grouped into an array so the test compares values rather than asserting on
 // constants, which clippy rightly points out proves nothing at runtime.
