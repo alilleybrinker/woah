@@ -26,11 +26,19 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   error channels into one, escalating a `LocalErr` through `F: From<L>`. This is
   the transform #7 asked for, which `flatten` -- the direct analogue of std's
   method -- does not perform.
-- `map_err_or`, `map_err_or_else`, `map_local_err_or`, `map_local_err_or_else`,
-  `map_fatal_err_or` and `map_fatal_err_or_else`. These stand to `map_err`,
-  `map_local_err` and `map_fatal_err` as `map_or` and `map_or_else` stand to
-  `map`: they unwrap to a value rather than returning a `Result`. The `docs`
-  module had listed all six since 0.4.x, but they were never implemented.
+- `map_err_or`, `map_err_or_else`, `map_local_err_or_else` and
+  `map_fatal_err_or_else`. These stand to `map_err`, `map_local_err` and
+  `map_fatal_err` as `map_or` and `map_or_else` stand to `map`: they unwrap to
+  a value rather than returning a `Result`. The `docs` module had listed these
+  since 0.4.x, but they were never implemented.
+
+  Two of the six it listed are deliberately *not* here.
+  `map_local_err_or(default, f)` would have returned the default for a
+  `FatalErr` as well as a `Success`, silently dropping a fatal error and making
+  it indistinguishable from success; `map_fatal_err_or` did the same to a local
+  error. In a crate whose premise is that fatal errors do not get swallowed,
+  that is the wrong default shape for an API to have. The `_or_else` forms give
+  every variant its own function and lose nothing.
 - `unwrap_unchecked`, `unwrap_err_unchecked`, `unwrap_local_err_unchecked` and
   `unwrap_fatal_err_unchecked`. These are `unsafe`: calling one on a variant it
   does not name is undefined behavior.
