@@ -266,11 +266,13 @@ pub mod docs {
     //!
     //! ### Convert to and from a `std::result::Result`
     //!
-    //! The shape names say which `std::result::Result` is involved: the *flat* `Result<T, L>`
-    //! carries only the local error, while the *nested* `Result<Result<T, L>, F>` puts the fatal
-    //! error outside and the local one inside.
+    //! The names say which `std::result::Result` is involved. `Result<T, L>` carries only the
+    //! local error -- it is what `?` hands back -- and the nested `Result<Result<T, L>, F>` puts
+    //! the fatal error outside and the local one inside. Note that `Result<T, F>`, carrying only
+    //! the fatal error, is a third shape: [`into_result_merged`](crate::Result::into_result_merged)
+    //! produces it, and nothing constructs a `woah::Result` from it.
     //!
-    //! 1. [`from_flat_result`](crate::Result::from_flat_result)
+    //! 1. [`from_local_result`](crate::Result::from_local_result)
     //! 1. [`from_nested_result`](crate::Result::from_nested_result)
     //! 1. [`into_nested_result`](crate::Result::into_nested_result)
     //! 1. [`into_result_merged`](crate::Result::into_result_merged)
@@ -453,12 +455,12 @@ impl<T, L, F> Result<T, L, F> {
     /// Convert into the nested `Result<Result<T, L>, F>`, which is equivalent in `?` behavior:
     /// the fatal error is the outer `Err`, and the local error the inner one.
     ///
-    /// The inverse is [`from_nested_result`]. Note that it is *not* [`from_flat_result`], which
-    /// takes the flat `Result<T, L>` with no fatal channel at all; round-tripping through that
-    /// pair nests one layer deeper each time.
+    /// The inverse is [`from_nested_result`]. Note that it is *not* [`from_local_result`], which
+    /// takes a `Result<T, L>` with no fatal channel at all; round-tripping through that pair
+    /// nests one layer deeper each time.
     ///
     /// [`from_nested_result`]: crate::Result::from_nested_result
-    /// [`from_flat_result`]: crate::Result::from_flat_result
+    /// [`from_local_result`]: crate::Result::from_local_result
     ///
     /// # Example
     ///
@@ -473,14 +475,18 @@ impl<T, L, F> Result<T, L, F> {
         self.into()
     }
 
-    /// Construct a [`Success`] or a [`LocalErr`] from the flat `Result<T, L>`.
+    /// Construct a [`Success`] or a [`LocalErr`] from a `Result<T, L>` carrying the local error.
     ///
-    /// The input carries no fatal error, so this can only ever produce the first two variants.
+    /// This is the shape `?` hands back: `Try::Output` for `woah::Result` is `Result<T, L>`,
+    /// because a fatal error breaks early and never reaches it. So this method re-wraps what `?`
+    /// gave you, and carries no fatal error to put in a [`FatalErr`].
+    ///
     /// For the nested `Result<Result<T, L>, F>` that [`into_nested_result`] produces, use
-    /// [`from_nested_result`], which is its inverse and can produce all three.
+    /// [`from_nested_result`], which is its inverse and can produce all three variants.
     ///
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
+    /// [`FatalErr`]: crate::Result::FatalErr
     /// [`into_nested_result`]: crate::Result::into_nested_result
     /// [`from_nested_result`]: crate::Result::from_nested_result
     ///
@@ -489,11 +495,11 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     /// use woah::prelude::*;
     ///
-    /// let result: Result<i64, &str, &str> = Result::from_flat_result(Ok(0));
+    /// let result: Result<i64, &str, &str> = Result::from_local_result(Ok(0));
     /// assert_eq!(result, Success(0));
     /// ```
     #[inline]
-    pub fn from_flat_result(ok: StdResult<T, L>) -> Self {
+    pub fn from_local_result(ok: StdResult<T, L>) -> Self {
         match ok {
             Ok(t) => Success(t),
             Err(err) => LocalErr(err),
@@ -504,14 +510,14 @@ impl<T, L, F> Result<T, L, F> {
     ///
     /// This is the inverse of [`into_nested_result`]: the outer `Err` becomes a [`FatalErr`],
     /// the inner one a [`LocalErr`], and `Ok(Ok(_))` a [`Success`]. Unlike
-    /// [`from_flat_result`], which takes the flat `Result<T, L>` and so can only produce the
-    /// first two variants, this can produce all three.
+    /// [`from_local_result`], which takes a `Result<T, L>` and so can only produce the first
+    /// two variants, this can produce all three.
     ///
     /// [`Success`]: crate::Result::Success
     /// [`LocalErr`]: crate::Result::LocalErr
     /// [`FatalErr`]: crate::Result::FatalErr
     /// [`into_nested_result`]: crate::Result::into_nested_result
-    /// [`from_flat_result`]: crate::Result::from_flat_result
+    /// [`from_local_result`]: crate::Result::from_local_result
     ///
     /// # Example
     ///
@@ -529,7 +535,7 @@ impl<T, L, F> Result<T, L, F> {
     /// ```
     ///
     /// Round-tripping through [`into_nested_result`] gets the original back, which
-    /// [`from_flat_result`] cannot do:
+    /// [`from_local_result`] cannot do:
     ///
     /// ```
     /// use woah::prelude::*;
