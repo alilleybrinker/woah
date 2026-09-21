@@ -252,13 +252,13 @@ pub mod docs {
     //! The names say which `std::result::Result` is involved. `Result<T, L>` carries only the
     //! local error -- it is what `?` hands back -- and the nested `Result<Result<T, L>, F>` puts
     //! the fatal error outside and the local one inside. Note that `Result<T, F>`, carrying only
-    //! the fatal error, is a third shape: [`into_result_merged`](crate::Result::into_result_merged)
+    //! the fatal error, is a third shape: [`into_merged_result`](crate::Result::into_merged_result)
     //! produces it, and nothing constructs a `woah::Result` from it.
     //!
     //! 1. [`from_local_result`](crate::Result::from_local_result)
     //! 1. [`from_nested_result`](crate::Result::from_nested_result)
     //! 1. [`into_nested_result`](crate::Result::into_nested_result)
-    //! 1. [`into_result_merged`](crate::Result::into_result_merged)
+    //! 1. [`into_merged_result`](crate::Result::into_merged_result)
     //!
     //! ### Use `woah::Result` with the question mark operator
     //!
@@ -2356,13 +2356,13 @@ where
     /// use woah::prelude::*;
     ///
     /// let r: Result<u32, &str, &str> = Success(5);
-    /// assert_eq!(r.into_result_merged(), Ok(5));
+    /// assert_eq!(r.into_merged_result(), Ok(5));
     ///
     /// let r: Result<u32, &str, &str> = LocalErr("an error");
-    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    /// assert_eq!(r.into_merged_result(), Err("an error"));
     ///
     /// let r: Result<u32, &str, &str> = FatalErr("an error");
-    /// assert_eq!(r.into_result_merged(), Err("an error"));
+    /// assert_eq!(r.into_merged_result(), Err("an error"));
     /// ```
     ///
     /// With two error types, the local one escalates through its `From` impl:
@@ -2386,13 +2386,13 @@ where
     /// }
     ///
     /// let r: Result<u32, Timeout, Fatal> = LocalErr(Timeout);
-    /// assert_eq!(r.into_result_merged(), Err(Fatal::GaveUp));
+    /// assert_eq!(r.into_merged_result(), Err(Fatal::GaveUp));
     ///
     /// let r: Result<u32, Timeout, Fatal> = FatalErr(Fatal::Unreachable);
-    /// assert_eq!(r.into_result_merged(), Err(Fatal::Unreachable));
+    /// assert_eq!(r.into_merged_result(), Err(Fatal::Unreachable));
     /// ```
     #[inline]
-    pub fn into_result_merged(self) -> StdResult<T, F> {
+    pub fn into_merged_result(self) -> StdResult<T, F> {
         match self {
             Success(t) => Ok(t),
             LocalErr(err) => Err(F::from(err)),
@@ -2686,10 +2686,10 @@ impl<T, L, F> Result<Result<T, L, F>, L, F> {
     /// Flatten a `Result` nested inside the [`Success`] variant of another `Result`.
     ///
     /// This removes a layer of nesting. To collapse a single `Result`'s two error channels into
-    /// one instead, see [`into_result_merged`].
+    /// one instead, see [`into_merged_result`].
     ///
     /// [`Success`]: crate::Result::Success
-    /// [`into_result_merged`]: crate::Result::into_result_merged
+    /// [`into_merged_result`]: crate::Result::into_merged_result
     ///
     /// # Example
     ///

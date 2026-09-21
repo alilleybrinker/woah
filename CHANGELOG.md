@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   `Result<Result<T, L>, F>`. This is the inverse of `into_nested_result`, which
   previously existed only as a `From` impl with no named counterpart, so the
   named conversions could go one way but not back.
-- `into_result_merged`, converting into a `std::result::Result<T, F>` by merging both
+- `into_merged_result`, converting into a `std::result::Result<T, F>` by merging both
   error channels into one, escalating a `LocalErr` through `F: From<L>`. This is
   the transform #7 asked for, which `flatten` -- the direct analogue of std's
   method -- does not perform.
@@ -64,6 +64,11 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   renamed `or_local_err`, `or_fatal_err`, `or_else_local_err` and
   `or_else_fatal_err`. They were the only four methods naming a variant without
   the `_err` suffix the other 28 use.
+- **Breaking:** `into_result_merged` is renamed `into_merged_result`, so all
+  four named conversions read the same way -- `from_local_result`,
+  `from_nested_result`, `into_nested_result`, `into_merged_result`. The
+  `into_result_` prefix had made sense when `into_result` and
+  `into_result_default` existed alongside it; both are now gone.
 - **Breaking:** `from_fatal_error` is renamed `from_fatal_err`, so the
   constructors read `from_success` / `from_local_err` / `from_fatal_err`. Every
   other method in the crate spells this variant `fatal_err` -- 14 of them --
