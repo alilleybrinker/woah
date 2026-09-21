@@ -108,6 +108,51 @@ pub mod docs {
     //! `woah::Result` has a lot of methods, and the way they're grouped and presented by Rustdoc isn't always
     //! easy to navigate. To help, this page explains them in groups of similar methods.
     //!
+    //! ## Coming from `std::result::Result`
+    //!
+    //! Methods here are named after the variants they concern, the same way std's are. Since the
+    //! success variant is [`Success`] rather than `Ok`, the methods about it say `success`.
+    //!
+    //! The variant is not called `Ok` on purpose. This crate converts to and from
+    //! `std::result::Result` constantly, and `Ok` and `Err` need to keep meaning std's, both in
+    //! these docs and in code that imports [the prelude](crate::prelude) with a glob. Naming a
+    //! variant `Ok` would shadow them.
+    //!
+    //! On the error side the spellings happen to agree with std's, but they mean something wider:
+    //! a bare `_err` method concerns *either* error, and `_local_err` and `_fatal_err` pick one.
+    //!
+    //!| If you want std's | reach for | notes |
+    //!|:------------------|:----------|:------|
+    //!| `Ok(x)`           | [`Success(x)`](crate::Result::Success) | |
+    //!| `Err(e)`          | [`LocalErr(e)`](crate::Result::LocalErr) or [`FatalErr(e)`](crate::Result::FatalErr) | choosing between them is the point of the crate |
+    //!| `is_ok`           | [`is_success`](crate::Result::is_success) | |
+    //!| `is_ok_and`       | [`is_success_and`](crate::Result::is_success_and) | |
+    //!| `ok`              | [`success`](crate::Result::success) | |
+    #![cfg_attr(
+        feature = "nightly",
+        doc = "| `into_ok`         | [`into_success`](crate::Result::into_success) | `nightly` feature |"
+    )]
+    //!| `is_err`          | [`is_err`](crate::Result::is_err) | true for either error |
+    #![cfg_attr(
+        feature = "either",
+        doc = "| `err`             | [`err`](crate::Result::err) | `Option<Either<L, F>>`; or `local_err` / `fatal_err` |"
+    )]
+    #![cfg_attr(
+        feature = "either",
+        doc = "| `unwrap_err`      | [`unwrap_err`](crate::Result::unwrap_err) | or `unwrap_local_err` / `unwrap_fatal_err` |"
+    )]
+    #![cfg_attr(
+        feature = "either",
+        doc = "| `map_err`         | [`map_err`](crate::Result::map_err) | or `map_local_err` / `map_fatal_err` |"
+    )]
+    //!| `contains`        | [`is_success_and`](crate::Result::is_success_and) | std removed `contains`; so did this crate |
+    //!
+    //! Rustdoc's search knows the std names as aliases, so searching for `is_ok` on this crate's
+    //! documentation finds `is_success`. The same is true of the names this crate used before
+    //! 0.5.0, so searching `into_result` or `or_else_fatal` finds what replaced them.
+    //!
+    //! [`Success`]: crate::Result::Success
+    //!
     //! ## Methods
     //!
     //! ### See if the `Result` is a particular variant

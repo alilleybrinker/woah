@@ -172,6 +172,16 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
 
 - Every public item is documented with an example, and `missing_docs` is now
   denied.
+- The `docs` module has a "Coming from `std::result::Result`" section: a table
+  mapping std's names to this crate's, and the reason they differ. The success
+  variant is `Success` rather than `Ok` so that `Ok` and `Err` keep meaning
+  std's, in these docs and in code that globs the prelude; methods are named
+  after the variants they concern, as std's are.
+- Rustdoc search aliases via `#[doc(alias)]`, so searching the documentation
+  for a std name finds this crate's equivalent -- `is_ok` finds `is_success`,
+  `ok` finds `success` -- and searching for a name this release renamed or
+  removed finds what replaced it. Without them rustdoc offered no suggestion
+  for `is_ok` and pointed `ok` at `or`, a different operation.
 - The `docs` module no longer carries fourteen orphaned link definitions, left
   over from a table of contents that was removed at some point; nothing
   referenced any of them. `Iter` and `IterMut` also drop their explicit
