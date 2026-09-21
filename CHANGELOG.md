@@ -133,6 +133,24 @@ The format is based on [Keep a Changelog][keep-a-changelog], and `woah` follows
   result.as_ref().is_local_err_and(|e| *e == "boom");
   ```
 
+- **Breaking:** `into_result_default`. It replaced a `LocalErr` with `T`'s
+  default value, so a handled error and a genuine success came back
+  indistinguishable as `Ok`. Unlike the other removals in this release, this
+  method shipped in 0.4.x, so this one does cost existing callers. The
+  behavior is still available by taking the nested form and mapping over it,
+  which is equivalent on all three variants:
+
+  ```rust
+  // was
+  result.into_result_default();
+
+  // now
+  result.into_nested_result().map(|inner| inner.unwrap_or_default());
+  ```
+
+  `unwrap_or_default`, which returns `T` and discards both errors, is
+  unchanged.
+
 - The stale `control_flow_enum` and `never_type` feature gates, both of which
   named features that have since stabilized.
 

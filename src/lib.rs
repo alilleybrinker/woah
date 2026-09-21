@@ -273,7 +273,6 @@ pub mod docs {
     //! 1. [`from_flat_result`](crate::Result::from_flat_result)
     //! 1. [`from_nested_result`](crate::Result::from_nested_result)
     //! 1. [`into_nested_result`](crate::Result::into_nested_result)
-    //! 1. [`into_result_default`](crate::Result::into_result_default)
     //! 1. [`into_result_merged`](crate::Result::into_result_merged)
     //!
     //! ### Use `woah::Result` with the question mark operator
@@ -2339,36 +2338,6 @@ where
             _ => T::default(),
         }
     }
-
-    /// Convert into a `Result<T, F>`, replacing a [`LocalErr`] with `T`'s default value.
-    ///
-    /// This discards the local error, on the grounds that it has been handled; only the fatal
-    /// error survives the conversion.
-    ///
-    /// [`LocalErr`]: crate::Result::LocalErr
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use woah::prelude::*;
-    ///
-    /// let r: Result<u32, &str, &str> = Success(5);
-    /// assert_eq!(r.into_result_default(), Ok(5));
-    ///
-    /// let r: Result<u32, &str, &str> = LocalErr("a local error");
-    /// assert_eq!(r.into_result_default(), Ok(0));
-    ///
-    /// let r: Result<u32, &str, &str> = FatalErr("a fatal error");
-    /// assert_eq!(r.into_result_default(), Err("a fatal error"));
-    /// ```
-    #[inline]
-    pub fn into_result_default(self) -> StdResult<T, F> {
-        match self {
-            Success(t) => Ok(t),
-            LocalErr(_) => Ok(T::default()),
-            FatalErr(err) => Err(err),
-        }
-    }
 }
 
 impl<T, L, F> Result<T, L, F>
@@ -2382,13 +2351,13 @@ where
     /// `woah::Result<T, E, E>`, that conversion is the identity and this is simply a way to
     /// stop distinguishing the two.
     ///
-    /// This is the counterpart to [`into_result_default`], which drops the local error and
-    /// substitutes `T`'s default instead of escalating it. It is not [`flatten`], which removes
-    /// a layer of nesting rather than collapsing the error channels.
+    /// This is not [`flatten`], which removes a layer of nesting rather than collapsing the
+    /// error channels. To handle the local error some other way, take the nested form from
+    /// [`into_nested_result`] and map over it.
     ///
     /// [`LocalErr`]: crate::Result::LocalErr
-    /// [`into_result_default`]: crate::Result::into_result_default
     /// [`flatten`]: crate::Result::flatten
+    /// [`into_nested_result`]: crate::Result::into_nested_result
     ///
     /// # Example
     ///
